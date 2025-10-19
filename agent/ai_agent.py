@@ -380,3 +380,4 @@ if __name__ == "__main__":
     else:
         logger.info(f"User provided query: {query}")
         asyncio.run(main(query))
+

@@ -58,7 +58,7 @@ A versatile AI assistant that can perform mathematical calculations, create Powe
 
 5. Start the AI agent (in another terminal):
    ```bash
-   python ai_agent.py
+   python agent/ai_agent.py
    ```
 
    The agent will prompt for your query in the terminal.
@@ -97,7 +97,7 @@ A versatile AI assistant that can perform mathematical calculations, create Powe
 ## 🛠 Development
 
 ### Project Structure
-- `ai_agent.py`: Core AI agent logic, conversation memory, and tool integration
+- `agent/ai_agent.py`: Core AI agent logic, conversation memory, and tool integration
 - `mcp-server.py`: MCP server for tool execution, including fallback reasoning
 - `chrome-extension/`: Frontend Chrome extension code
 - `requirements.txt` / `pyproject.toml`: Python dependencies and project metadata
