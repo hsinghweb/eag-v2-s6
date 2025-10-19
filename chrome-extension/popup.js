@@ -1,3 +1,127 @@
+// Helper Functions
+function tryParseJson(responseText) {
+  try {
+    let resultData = JSON.parse(responseText);
+    if (typeof resultData === 'string') {
+      try {
+        const innerJson = JSON.parse(resultData);
+        if (typeof innerJson === 'object' && innerJson !== null) {
+          resultData = innerJson;
+        }
+      } catch (e) {
+        console.warn('Inner JSON parse failed, using as-is:', e);
+      }
+    }
+    return { data: resultData, error: null };
+  } catch (e) {
+    return { data: null, error: e };
+  }
+}
+
+function parseResultValue(result) {
+  // Handle already-parsed objects
+  if (result && typeof result === 'object' && !Array.isArray(result)) {
+    // Common patterns: {"result": value} or {"value": value}
+    if (result.result !== undefined) {
+      return result.result;
+    } else if (result.value !== undefined) {
+      return result.value;
+    }
+    // If it's a simple object with one key, return that value
+    const keys = Object.keys(result);
+    if (keys.length === 1) {
+      return result[keys[0]];
+    }
+    // Otherwise return as JSON string
+    return JSON.stringify(result);
+  }
+  
+  // Handle arrays
+  if (Array.isArray(result)) {
+    if (result.length === 1) {
+      return result[0];
+    }
+    return result.join(', ');
+  }
+  
+  // Try to parse if it looks like JSON string
+  if (typeof result === 'string' && (result.startsWith('{') || result.startsWith('['))) {
+    try {
+      const parsed = JSON.parse(result);
+      // Recursively parse the result
+      return parseResultValue(parsed);
+    } catch (e) {
+      // JSON parsing failed, return original string
+      console.debug('Result is not valid JSON:', e);
+      return result;
+    }
+  }
+  
+  // Return as-is for primitives (numbers, strings, booleans)
+  return result;
+}
+
+function formatResultHTML(query, resultData, responseText) {
+  if (!resultData) {
+    return `
+      <div class="result-container">
+        <div class="query-display">Query: ${query}</div>
+        <div class="result-item">
+          <div class="result-label">Result</div>
+          <div class="result-value">${responseText}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (resultData.query && resultData.result) {
+    // Parse the result to extract clean value
+    let cleanResult = parseResultValue(resultData.result);
+    
+    // If result still contains "Query:" prefix, clean it up
+    if (typeof cleanResult === 'string' && cleanResult.includes('Query:') && cleanResult.includes('Result:')) {
+      cleanResult = cleanResult.split('Result:')[1]?.trim() || cleanResult;
+    }
+    
+    return `
+      <div class="result-container">
+        <div class="query-display">
+          <span class="label">Query:</span>
+          <span class="result-value-inline">${resultData.query}</span>
+        </div>
+        <div class="result-item">
+          <span class="label">Result:</span>
+          <span class="result-value">${cleanResult}</span>
+        </div>
+      </div>
+    `;
+  } else if (resultData.result) {
+    let cleanResult = parseResultValue(resultData.result);
+    
+    if (typeof cleanResult === 'string' && cleanResult.includes('Query:') && cleanResult.includes('Result:')) {
+      cleanResult = cleanResult.split('Result:')[1]?.trim() || cleanResult;
+    }
+    
+    return `
+      <div class="result-container">
+        <div class="result-item">
+          <span class="label">Result:</span>
+          <span class="result-value">${cleanResult}</span>
+        </div>
+      </div>
+    `;
+  } else {
+    return `
+      <div class="result-container">
+        <div class="result-item">
+          <pre>${JSON.stringify(resultData, null, 2)}</pre>
+        </div>
+      </div>
+    `;
+  }
+}
+
+// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
   const queryInput = document.getElementById('query-input');
   const submitBtn = document.getElementById('submit-btn');
@@ -106,75 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Handle button click
   submitBtn.addEventListener('click', sendQuery);
 
-  function tryParseJson(responseText) {
-    try {
-      let resultData = JSON.parse(responseText);
-      if (typeof resultData === 'string') {
-        try {
-          const innerJson = JSON.parse(resultData);
-          if (typeof innerJson === 'object' && innerJson !== null) {
-            resultData = innerJson;
-          }
-        } catch (e) {
-          console.warn('Inner JSON parse failed, using as-is:', e);
-        }
-      }
-      return { data: resultData, error: null };
-    } catch (e) {
-      return { data: null, error: e };
-    }
-  }
-
-  function formatResultHTML(query, resultData, responseText) {
-    if (!resultData) {
-      return `
-        <div class="result-container">
-          <div class="query-display">Query: ${query}</div>
-          <div class="result-item">
-            <div class="result-label">Result</div>
-            <div class="result-value">${responseText}</div>
-          </div>
-        </div>
-      `;
-    }
-
-    if (resultData.query && resultData.result) {
-      return `
-        <div class="result-container">
-          <div class="query-display">
-            <span class="label">Query:</span>
-            <span class="result-value-inline">${resultData.query}</span>
-          </div>
-          <div class="result-item">
-            <span class="label">Result:</span>
-            <span class="result-value">${resultData.result}</span>
-          </div>
-        </div>
-      `;
-    } else if (resultData.result) {
-      let cleanResult = resultData.result;
-      if (cleanResult.includes('Query:') && cleanResult.includes('Result:')) {
-        cleanResult = cleanResult.split('Result:')[1]?.trim() || cleanResult;
-      }
-      return `
-        <div class="result-container">
-          <div class="result-item">
-            <span class="label">Result:</span>
-            <span class="result-value">${cleanResult}</span>
-          </div>
-        </div>
-      `;
-    } else {
-      return `
-        <div class="result-container">
-          <div class="result-item">
-            <pre>${JSON.stringify(resultData, null, 2)}</pre>
-          </div>
-        </div>
-      `;
-    }
-  }
-
+  // Send query to server
   async function sendQuery() {
     const query = queryInput.value.trim();
 
