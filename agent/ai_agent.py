@@ -10,6 +10,7 @@ from datetime import datetime
 import traceback
 import json
 from .prompts import SYSTEM_PROMPT_TEMPLATE
+from .models import AgentResponse
 
 # Configure logging
 log_dir = "logs"
@@ -214,14 +215,16 @@ def handle_final_answer(first_line, query):
     clean_answer = final_answer.strip('[]')
     if clean_answer.startswith('Query:'):
         clean_answer = clean_answer.split('Result:')[-1].strip()
-    response_data = {
-        'result': clean_answer,
-        'success': True,
-        'query': query,
-        'answer': clean_answer,
-        'full_response': f"Query: {query}\nResult: {clean_answer}"
-    }
-    return json.dumps(response_data, indent=2)
+    
+    # Use Pydantic model for validation
+    response = AgentResponse(
+        result=clean_answer,
+        success=True,
+        query=query,
+        answer=clean_answer,
+        full_response=f"Query: {query}\nResult: {clean_answer}"
+    )
+    return response.model_dump_json(indent=2)
 
 async def process_llm_response(
     response_text, tools, session, iteration_response, conversation_history, query

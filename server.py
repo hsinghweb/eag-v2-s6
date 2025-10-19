@@ -24,22 +24,41 @@ async def handle_query():
         # Run the AI agent with the query
         result = await ai_main(query)
         
-        # Parse the JSON response from the AI agent
+        # Handle None result (agent failed or timed out)
+        if result is None:
+            logger.error("Agent returned None - possible timeout or error")
+            return jsonify({
+                'status': 'error',
+                'message': 'Agent failed to process query. Check logs for details.'
+            }), 500
+        
+        # Parse the JSON response from the AI agent (Pydantic model output)
         try:
             if isinstance(result, str):
                 import json
                 result_data = json.loads(result)
-                if 'result' in result_data:
+                logger.debug(f"Parsed result data: {result_data}")
+                
+                # Pydantic AgentResponse model has these fields:
+                # result, success, query, answer, full_response
+                if 'result' in result_data and result_data.get('success', True):
                     # Return the clean result for the Chrome extension
                     return jsonify({
                         'status': 'success',
                         'result': result_data.get('answer', result_data['result']),
-                        'query': result_data.get('query', '')
+                        'query': result_data.get('query', query)
                     })
-        except json.JSONDecodeError:
-            logger.warning("Failed to parse AI agent response as JSON, falling back to string extraction")
+                elif not result_data.get('success', True):
+                    # Handle error responses
+                    return jsonify({
+                        'status': 'error',
+                        'message': result_data.get('result', 'Unknown error')
+                    }), 500
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse AI agent response as JSON: {e}")
+            logger.error(f"Raw result: {result}")
             # Fallback to string extraction if JSON parsing fails
-            if 'FINAL_ANSWER:' in result:
+            if isinstance(result, str) and 'FINAL_ANSWER:' in result:
                 final_answer = result.split('FINAL_ANSWER:')[-1].strip('[] \'"')
                 # Clean up any Query/Result prefixes
                 if 'Query:' in final_answer:
@@ -47,14 +66,16 @@ async def handle_query():
                 return jsonify({
                     'status': 'success',
                     'result': final_answer,
-                    'query': ''
+                    'query': query
                 })
         
         # If we get here, we couldn't extract a proper result
+        logger.error(f"Unexpected result format: {result}")
         return jsonify({
-            'status': 'success',
-            'result': result if isinstance(result, str) else str(result)
-        })
+            'status': 'error',
+            'message': 'Unexpected response format from agent',
+            'raw_result': str(result) if result else 'None'
+        }), 500
         
     except Exception as e:
         logger.error(f"Error processing query: {str(e)}")

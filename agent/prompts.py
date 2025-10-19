@@ -39,27 +39,32 @@ Important Rules:
 
 Examples:
 User: What is 2 + 3?
-FUNCTION_CALL: {{"name": "number_list_to_sum", "args": [2,3], "reasoning_type": "Arithmetic", "step": "Add 2 and 3"}}
+FUNCTION_CALL: {{"name": "t_number_list_to_sum", "args": {{"numbers": [2, 3]}}, "reasoning_type": "Arithmetic", "step": "Add 2 and 3"}}
 SELF_CHECK: Is the result reasonable? -> Yes
 FINAL_ANSWER: [Query: What is 2 + 3? Result: 5]
 
+User: Subtract 50 from 300
+FUNCTION_CALL: {{"name": "t_calculate_difference", "args": {{"a": 300, "b": 50}}, "reasoning_type": "Arithmetic", "step": "Subtract 50 from 300"}}
+SELF_CHECK: Is the result reasonable? -> Yes
+FINAL_ANSWER: [Query: Subtract 50 from 300. Result: 250]
+
 User: Add 2 and 3 and show in PowerPoint
-FUNCTION_CALL: {{"name": "open_powerpoint", "args": [], "reasoning_type": "Entity Lookup", "step": "Open PowerPoint"}}
-FUNCTION_CALL: {{"name": "draw_rectangle", "args": [1,1,8,6], "reasoning_type": "Entity Lookup", "step": "Draw rectangle"}}
-FUNCTION_CALL: {{"name": "add_text_in_powerpoint", "args": ["Query: Add 2 and 3 and show in PowerPoint\\nResult: 2 + 3 = 5",2,2,24,True], "reasoning_type": "Entity Lookup", "step": "Add text"}}
-FUNCTION_CALL: {{"name": "close_powerpoint", "args": [], "reasoning_type": "Entity Lookup", "step": "Close PowerPoint"}}
+FUNCTION_CALL: {{"name": "open_powerpoint", "args": {{}}, "reasoning_type": "Entity Lookup", "step": "Open PowerPoint"}}
+FUNCTION_CALL: {{"name": "draw_rectangle", "args": {{"x1": 1, "y1": 1, "x2": 8, "y2": 6}}, "reasoning_type": "Entity Lookup", "step": "Draw rectangle"}}
+FUNCTION_CALL: {{"name": "add_text_in_powerpoint", "args": {{"text": "Query: Add 2 and 3\\nResult: 5"}}, "reasoning_type": "Entity Lookup", "step": "Add text"}}
+FUNCTION_CALL: {{"name": "close_powerpoint", "args": {{}}, "reasoning_type": "Entity Lookup", "step": "Close PowerPoint"}}
 SELF_CHECK: Is the result reasonable? -> Yes
 FINAL_ANSWER: [Query: Add 2 and 3 and show in PowerPoint. Result: 5. The result has been added to PowerPoint.]
 
 User: Add 2 and 3 and email me the result
-FUNCTION_CALL: {{"name": "number_list_to_sum", "args": [2,3], "reasoning_type": "Arithmetic", "step": "Add 2 and 3"}}
+FUNCTION_CALL: {{"name": "t_number_list_to_sum", "args": {{"numbers": [2, 3]}}, "reasoning_type": "Arithmetic", "step": "Add 2 and 3"}}
 SELF_CHECK: Is the result reasonable? -> Yes
-FUNCTION_CALL: {{"name": "send_gmail", "args": ["Query: Add 2 and 3 and email me the result\\n\\nResult: 2 + 3 = 5"], "reasoning_type": "Entity Lookup", "step": "Send result by email"}}
+FUNCTION_CALL: {{"name": "send_gmail", "args": {{"content": "Query: Add 2 and 3\\nResult: 5"}}, "reasoning_type": "Entity Lookup", "step": "Send result by email"}}
 SELF_CHECK: Is the result reasonable? -> Yes
 FINAL_ANSWER: [Query: Add 2 and 3 and email me the result. Result: 5. The result has been sent via email.]
 
 User: Add 2 and 3
-FUNCTION_CALL: {{"name": "number_list_to_sum", "args": [2,3], "reasoning_type": "Arithmetic", "step": "Add 2 and 3"}}
+FUNCTION_CALL: {{"name": "t_number_list_to_sum", "args": {{"numbers": [2, 3]}}, "reasoning_type": "Arithmetic", "step": "Add 2 and 3"}}
 SELF_CHECK: Is the result reasonable? -> Yes
 FINAL_ANSWER: [Query: Add 2 and 3. Result: 5]
 """

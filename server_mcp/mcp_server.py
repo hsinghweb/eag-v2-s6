@@ -30,6 +30,23 @@ from server_mcp.tools import (
     calculate_salary_for_name,
     calculate_percentage,
 )
+from server_mcp.models import (
+    DrawRectangleInput, DrawRectangleOutput,
+    AddTextInput, AddTextOutput,
+    PowerPointOperationOutput,
+    SendGmailInput, SendGmailOutput,
+    NumberListInput, NumberListOutput,
+    TwoNumberInput, TwoNumberOutput,
+    PercentageInput, PercentageOutput,
+    StringToCharsInput, StringToCharsOutput,
+    ExponentialInput, ExponentialOutput,
+    FibonacciInput, FibonacciOutput,
+    FactorialInput, FactorialOutput,
+    PermutationInput, PermutationOutput,
+    CombinationInput, CombinationOutput,
+    EmployeeIdInput, EmployeeNameInput, SalaryOutput,
+    FallbackInput, FallbackOutput,
+)
 import logging
 from datetime import datetime
 import traceback
@@ -142,41 +159,10 @@ async def open_powerpoint() -> dict:
         }
 
 @mcp.tool()
-async def draw_rectangle(x1: int = 1, y1: int = 1, x2: int = 8, y2: int = 6) -> dict:
-    """Draw a rectangle in the first slide of PowerPoint
-    
-    Args:
-        x1: X-coordinate of top-left corner (1-8, default: 1)
-        y1: Y-coordinate of top-left corner (1-8, default: 1)
-        x2: X-coordinate of bottom-right corner (1-8, default: 8)
-        y2: Y-coordinate of bottom-right corner (1-8, default: 6)
-    """
+async def draw_rectangle(input: DrawRectangleInput) -> dict:
+    """Draw a rectangle in the first slide of PowerPoint"""
     try:
-        logger.info(f"Drawing rectangle with parameters: x1={x1} ({type(x1)}), y1={y1} ({type(y1)}), x2={x2} ({type(x2)}), y2={y2} ({type(y2)})")
-        
-        # Convert parameters to integers
-        try:
-            x1 = int(float(str(x1)))
-            y1 = int(float(str(y1)))
-            x2 = int(float(str(x2)))
-            y2 = int(float(str(y2)))
-        except (ValueError, TypeError) as e:
-            error_msg = f"Failed to convert parameters to integers: {str(e)}"
-            logger.error(error_msg)
-            return {"content": [TextContent(type="text", text=error_msg)]}
-
-        logger.debug(f"Converted coordinates: ({x1},{y1}) to ({x2},{y2})")
-        
-        # Validate coordinates
-        if not (1 <= x1 <= 8 and 1 <= y1 <= 8 and 1 <= x2 <= 8 and 1 <= y2 <= 8):
-            error_msg = f"Coordinates must be between 1 and 8, got: ({x1},{y1}) to ({x2},{y2})"
-            logger.error(error_msg)
-            return {"content": [TextContent(type="text", text=error_msg)]}
-        
-        if x2 <= x1 or y2 <= y1:
-            error_msg = f"End coordinates must be greater than start coordinates: ({x1},{y1}) to ({x2},{y2})"
-            logger.error(error_msg)
-            return {"content": [TextContent(type="text", text=error_msg)]}
+        logger.info(f"Drawing rectangle with validated parameters: ({input.x1},{input.y1}) to ({input.x2},{input.y2})")
         
         # Wait before modifying the presentation
         await asyncio.sleep(2)
@@ -208,10 +194,10 @@ async def draw_rectangle(x1: int = 1, y1: int = 1, x2: int = 8, y2: int = 6) -> 
                 sp.getparent().remove(sp)
         
         # Convert coordinates to inches
-        left = Inches(x1)
-        top = Inches(y1)
-        width = Inches(x2 - x1)
-        height = Inches(y2 - y1)
+        left = Inches(input.x1)
+        top = Inches(input.y1)
+        width = Inches(input.x2 - input.x1)
+        height = Inches(input.y2 - input.y1)
         
         logger.debug(f"Rectangle dimensions - left={left}, top={top}, width={width}, height={height}")
         
@@ -235,12 +221,12 @@ async def draw_rectangle(x1: int = 1, y1: int = 1, x2: int = 8, y2: int = 6) -> 
         os.startfile(PPTX_FILENAME)
         await asyncio.sleep(5)
         
-        logger.info(f"Rectangle drawn successfully from ({x1},{y1}) to ({x2},{y2})")
+        logger.info(f"Rectangle drawn successfully from ({input.x1},{input.y1}) to ({input.x2},{input.y2})")
         return {
             "content": [
                 TextContent(
                     type="text",
-                    text=f"Rectangle drawn successfully from ({x1},{y1}) to ({x2},{y2})"
+                    text=f"Rectangle drawn successfully from ({input.x1},{input.y1}) to ({input.x2},{input.y2})"
                 )
             ]
         }
@@ -252,13 +238,12 @@ async def draw_rectangle(x1: int = 1, y1: int = 1, x2: int = 8, y2: int = 6) -> 
         return {"content": [TextContent(type="text", text=error_msg)]}
 
 @mcp.tool()
-async def add_text_in_powerpoint(text: str) -> dict:
+async def add_text_in_powerpoint(input: AddTextInput) -> dict:
     """Add text to the first slide of PowerPoint"""
     try:
-        logger.info(f"Received text to add: {text}")
-        logger.debug(f"Text type: {type(text)}")
-        logger.debug(f"Text length: {len(text)}")
-        logger.debug(f"Text contains newlines: {'\\n' in text}")
+        logger.info(f"Received text to add: {input.text}")
+        logger.debug(f"Text length: {len(input.text)}")
+        logger.debug(f"Text contains newlines: {'\\n' in input.text}")
         
         # Wait before adding text
         await asyncio.sleep(5)
@@ -285,7 +270,7 @@ async def add_text_in_powerpoint(text: str) -> dict:
         text_frame.vertical_anchor = 1  # Middle vertical alignment
         
         # Split text into lines
-        lines = text.split('\n')
+        lines = input.text.split('\n')
         logger.debug(f"Number of lines: {len(lines)}")
         logger.debug(f"Lines to add: {lines}")
         
@@ -316,12 +301,12 @@ async def add_text_in_powerpoint(text: str) -> dict:
         os.startfile(PPTX_FILENAME)
         await asyncio.sleep(10)
         
-        logger.info(f"Text added successfully: {text}")
+        logger.info(f"Text added successfully: {input.text}")
         return {
             "content": [
                 TextContent(
                     type="text",
-                    text=f"Text added successfully: {text}"
+                    text=f"Text added successfully: {input.text}"
                 )
             ]
         }
@@ -338,10 +323,10 @@ async def add_text_in_powerpoint(text: str) -> dict:
         }
 
 @mcp.tool()
-async def send_gmail(content: str) -> dict:
+async def send_gmail(input: SendGmailInput) -> dict:
     """Send an email with the specified content via Gmail"""
     try:
-        logger.info(f"Calling send_gmail(content: {content[:50]}...)")
+        logger.info(f"Calling send_gmail(content: {input.content[:50]}...)")
         
         # Retrieve Gmail credentials and recipient from .env
         gmail_address = os.getenv("GMAIL_ADDRESS")
@@ -374,7 +359,7 @@ async def send_gmail(content: str) -> dict:
             }
         
         # Create the email message
-        msg = MIMEText(content)
+        msg = MIMEText(input.content)
         msg['Subject'] = 'Math Agent Result'
         msg['From'] = gmail_address
         msg['To'] = recipient_email
@@ -431,90 +416,104 @@ async def send_gmail(content: str) -> dict:
             ]
         }
 
-# TOOLS WRAPPING FUNCTIONS FROM tools.py
+# TOOLS WRAPPING FUNCTIONS FROM tools.py (with Pydantic validation)
 @mcp.tool()
-def t_number_list_to_sum(lst: list) -> int:
-    """Sum numbers in a list (wrapper around tools.number_list_to_sum)"""
-    logger.info(f"Calling t_number_list_to_sum(lst: {lst}) -> int")
-    return number_list_to_sum(lst)
+def t_number_list_to_sum(input: NumberListInput) -> NumberListOutput:
+    """Sum numbers in a list"""
+    logger.info(f"Calling t_number_list_to_sum with {len(input.numbers)} numbers")
+    result = number_list_to_sum(input.numbers)
+    return NumberListOutput(result=result)
 
 @mcp.tool()
-def t_calculate_difference(a: float, b: float) -> float:
-    """Difference between two numbers (wrapper)"""
-    logger.info(f"Calling t_calculate_difference(a: {a}, b: {b}) -> float")
-    return calculate_difference(a, b)
+def t_calculate_difference(input: TwoNumberInput) -> TwoNumberOutput:
+    """Difference between two numbers"""
+    logger.info(f"Calling t_calculate_difference({input.a}, {input.b})")
+    result = calculate_difference(input.a, input.b)
+    return TwoNumberOutput(result=result)
 
 @mcp.tool()
-def t_number_list_to_product(lst: list) -> int:
-    """Product of numbers in a list (wrapper)"""
-    logger.info(f"Calling t_number_list_to_product(lst: {lst}) -> int")
-    return number_list_to_product(lst)
+def t_number_list_to_product(input: NumberListInput) -> NumberListOutput:
+    """Product of numbers in a list"""
+    logger.info(f"Calling t_number_list_to_product with {len(input.numbers)} numbers")
+    result = number_list_to_product(input.numbers)
+    return NumberListOutput(result=result)
 
 @mcp.tool()
-def t_calculate_division(a: float, b: float) -> float:
-    """Division of two numbers (wrapper)"""
-    logger.info(f"Calling t_calculate_division(a: {a}, b: {b}) -> float")
-    return calculate_division(a, b)
+def t_calculate_division(input: TwoNumberInput) -> TwoNumberOutput:
+    """Division of two numbers"""
+    logger.info(f"Calling t_calculate_division({input.a}, {input.b})")
+    result = calculate_division(input.a, input.b)
+    return TwoNumberOutput(result=result)
 
 @mcp.tool()
-def t_strings_to_chars_to_int(s: str) -> list[int]:
-    """ASCII values of characters (wrapper)"""
-    logger.info(f"Calling t_strings_to_chars_to_int(s: {s}) -> list[int]")
-    return local_strings_to_chars_to_int(s)
+def t_strings_to_chars_to_int(input: StringToCharsInput) -> StringToCharsOutput:
+    """ASCII values of characters"""
+    logger.info(f"Calling t_strings_to_chars_to_int('{input.text}')")
+    ascii_values = local_strings_to_chars_to_int(input.text)
+    return StringToCharsOutput(ascii_values=ascii_values)
 
 @mcp.tool()
-def t_int_list_to_exponential_values(lst: list) -> list[float]:
-    """Exponential of list elements (wrapper)"""
-    logger.info(f"Calling t_int_list_to_exponential_values(lst: {lst}) -> list[float]")
-    return int_list_to_exponential_values(lst)
+def t_int_list_to_exponential_values(input: ExponentialInput) -> ExponentialOutput:
+    """Exponential of list elements"""
+    logger.info(f"Calling t_int_list_to_exponential_values with {len(input.numbers)} numbers")
+    values = int_list_to_exponential_values(input.numbers)
+    return ExponentialOutput(values=values)
 
 @mcp.tool()
-def t_fibonacci_numbers(n: int) -> list[int]:
-    """First n Fibonacci numbers (wrapper)"""
-    logger.info(f"Calling t_fibonacci_numbers(n: {n}) -> list[int]")
-    return local_fibonacci_numbers(n)
+def t_fibonacci_numbers(input: FibonacciInput) -> FibonacciOutput:
+    """First n Fibonacci numbers"""
+    logger.info(f"Calling t_fibonacci_numbers(n={input.n})")
+    sequence = local_fibonacci_numbers(input.n)
+    return FibonacciOutput(sequence=sequence)
 
 @mcp.tool()
-def t_calculate_factorial(n: int) -> list[int]:
-    """List of factorials up to n-1 (wrapper)"""
-    logger.info(f"Calling t_calculate_factorial(n: {n}) -> list[int]")
-    return calculate_factorial(n)
+def t_calculate_factorial(input: FactorialInput) -> FactorialOutput:
+    """List of factorials up to n-1"""
+    logger.info(f"Calling t_calculate_factorial(n={input.n})")
+    factorials = calculate_factorial(input.n)
+    return FactorialOutput(factorials=factorials)
 
 @mcp.tool()
-def t_calculate_permutation(n: int, r: int) -> int:
-    """Permutation nPr (wrapper)"""
-    logger.info(f"Calling t_calculate_permutation(n: {n}, r: {r}) -> int")
-    return calculate_permutation(n, r)
+def t_calculate_permutation(input: PermutationInput) -> PermutationOutput:
+    """Permutation nPr"""
+    logger.info(f"Calling t_calculate_permutation(n={input.n}, r={input.r})")
+    result = calculate_permutation(input.n, input.r)
+    return PermutationOutput(result=result)
 
 @mcp.tool()
-def t_calculate_combination(n: int, r: int) -> int:
-    """Combination nCr (wrapper)"""
-    logger.info(f"Calling t_calculate_combination(n: {n}, r: {r}) -> int")
-    return calculate_combination(n, r)
+def t_calculate_combination(input: CombinationInput) -> CombinationOutput:
+    """Combination nCr"""
+    logger.info(f"Calling t_calculate_combination(n={input.n}, r={input.r})")
+    result = calculate_combination(input.n, input.r)
+    return CombinationOutput(result=result)
 
 @mcp.tool()
-def t_calculate_salary_for_id(emp_id: int) -> float | int | None:
-    """Salary by employee id (wrapper)"""
-    logger.info(f"Calling t_calculate_salary_for_id(emp_id: {emp_id}) -> float | int | None")
-    return calculate_salary_for_id(emp_id)
+def t_calculate_salary_for_id(input: EmployeeIdInput) -> SalaryOutput:
+    """Salary by employee id"""
+    logger.info(f"Calling t_calculate_salary_for_id(emp_id={input.emp_id})")
+    salary = calculate_salary_for_id(input.emp_id)
+    return SalaryOutput(salary=salary, found=salary is not None)
 
 @mcp.tool()
-def t_calculate_salary_for_name(emp_name: str) -> float | int | None:
-    """Salary by employee name (wrapper)"""
-    logger.info(f"Calling t_calculate_salary_for_name(emp_name: {emp_name}) -> float | int | None")
-    return calculate_salary_for_name(emp_name)
+def t_calculate_salary_for_name(input: EmployeeNameInput) -> SalaryOutput:
+    """Salary by employee name"""
+    logger.info(f"Calling t_calculate_salary_for_name(emp_name='{input.emp_name}')")
+    salary = calculate_salary_for_name(input.emp_name)
+    return SalaryOutput(salary=salary, found=salary is not None)
 
 @mcp.tool()
-def t_calculate_percentage(percent: float, number: float) -> float:
-    """Calculate percentage of a number (wrapper)"""
-    logger.info(f"Calling t_calculate_percentage(percent: {percent}, number: {number}) -> float")
-    return calculate_percentage(percent, number)
+def t_calculate_percentage(input: PercentageInput) -> PercentageOutput:
+    """Calculate percentage of a number"""
+    logger.info(f"Calling t_calculate_percentage(percent={input.percent}, number={input.number})")
+    result = calculate_percentage(input.percent, input.number)
+    return PercentageOutput(result=result)
 
 @mcp.tool()
-def fallback_reasoning(description: str) -> str:
-    """Fallback reasoning step when the agent is uncertain or a tool fails."""
-    logger.info(f"Calling fallback_reasoning(description: {description})")
-    return f"Fallback invoked: {description}"
+def fallback_reasoning(input: FallbackInput) -> FallbackOutput:
+    """Fallback reasoning step when the agent is uncertain or a tool fails"""
+    logger.info(f"Calling fallback_reasoning: {input.description}")
+    message = f"Fallback invoked: {input.description}"
+    return FallbackOutput(message=message)
 
 if __name__ == "__main__":
     logger.info("Starting the MCP server")
