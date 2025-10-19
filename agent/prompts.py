@@ -2,6 +2,168 @@
 System prompts for the AI agent.
 """
 
+# ============================================================================
+# PERCEPTION LAYER PROMPT
+# ============================================================================
+
+PERCEPTION_PROMPT = """
+You are the Perception Layer of an AI agent. Your job is to analyze user input and extract structured information.
+
+Given a user query, you must output a JSON object with the following structure:
+{{
+    "intent": "<primary intent of the user>",
+    "entities": {{
+        "<entity_type>": "<entity_value>",
+        ...
+    }},
+    "thought_type": "<type of cognitive process>",
+    "extracted_facts": ["<fact1>", "<fact2>", ...],
+    "requires_tools": true/false,
+    "confidence": <0.0 to 1.0>
+}}
+
+**Thought Types:**
+- Planning: "First, I'll outline...", "My goal is to..."
+- Analysis: "This output discrepancy likely stems from..."
+- Decision Making: "Since speed is more critical..."
+- Problem Solving: "If the server keeps crashing, maybe..."
+- Memory Integration: "They mentioned they prefer..."
+- Self-Reflection: "That explanation confused..."
+- Goal Setting: "My objective today is..."
+- Prioritization: "Fixing the login issue takes precedence..."
+
+**Intent Types:**
+- calculation (math operations)
+- information_query (asking for info)
+- task_creation (reminders, todos)
+- tool_action (PowerPoint, email, etc.)
+- conditional_action (if-then scenarios)
+- multi_step (multiple operations)
+
+**Examples:**
+
+User: "What is 2 + 3?"
+{{
+    "intent": "calculation",
+    "entities": {{"numbers": [2, 3], "operation": "addition"}},
+    "thought_type": "Analysis",
+    "extracted_facts": ["User wants to add 2 and 3"],
+    "requires_tools": true,
+    "confidence": 1.0
+}}
+
+User: "Remind me to call Alice after the Zoom call"
+{{
+    "intent": "conditional_action",
+    "entities": {{"person": "Alice", "action": "call", "trigger": "after Zoom call"}},
+    "thought_type": "Planning",
+    "extracted_facts": ["User wants to call Alice", "Call should happen after Zoom call", "This is a conditional reminder"],
+    "requires_tools": true,
+    "confidence": 0.95
+}}
+
+User: "Add 2 and 3 and show in PowerPoint"
+{{
+    "intent": "multi_step",
+    "entities": {{"numbers": [2, 3], "operation": "addition", "output": "PowerPoint"}},
+    "thought_type": "Planning",
+    "extracted_facts": ["User wants to add 2 and 3", "Result should be displayed in PowerPoint", "This requires math calculation followed by PowerPoint operation"],
+    "requires_tools": true,
+    "confidence": 1.0
+}}
+
+User: "If it's sunny tomorrow, schedule tennis at 5"
+{{
+    "intent": "conditional_action",
+    "entities": {{"condition": "sunny weather", "time": "tomorrow", "action": "schedule tennis", "scheduled_time": "5 PM"}},
+    "thought_type": "Decision Making",
+    "extracted_facts": ["User wants to schedule tennis", "Scheduling is conditional on weather", "Time is 5 PM", "Check should happen tomorrow"],
+    "requires_tools": true,
+    "confidence": 0.9
+}}
+
+Now analyze the following user query and respond ONLY with the JSON object (no additional text):
+
+User Query: {query}
+"""
+
+# ============================================================================
+# DECISION LAYER PROMPT
+# ============================================================================
+
+DECISION_PROMPT = """
+You are the Decision-Making Layer of an AI agent. Based on the perceived intent and retrieved memory, you must create an action plan.
+
+**Input Information:**
+Perception: {perception}
+Memory: {memory}
+Available Tools: {available_tools}
+
+Your job is to output a JSON object with this structure:
+{{
+    "action_plan": [
+        {{
+            "step_number": 1,
+            "action_type": "tool_call|response|query_memory",
+            "description": "<what this step does>",
+            "tool_name": "<tool name if action_type is tool_call>",
+            "parameters": {{...}},
+            "reasoning": "<why this step is needed>"
+        }},
+        ...
+    ],
+    "reasoning": "<overall reasoning for this plan>",
+    "expected_outcome": "<what should happen>",
+    "confidence": <0.0 to 1.0>,
+    "should_continue": true/false
+}}
+
+**Action Types:**
+- tool_call: Execute a tool from the MCP server
+- response: Generate a text response to the user
+- query_memory: Retrieve information from memory (not yet implemented)
+
+**Planning Guidelines:**
+1. Break complex tasks into sequential steps
+2. Consider what information you have from memory
+3. Only use tools that are available
+4. Set should_continue to false when ready to give final answer
+
+**Examples:**
+
+Query: "What is 2 + 3?"
+{{
+    "action_plan": [
+        {{
+            "step_number": 1,
+            "action_type": "tool_call",
+            "description": "Add numbers 2 and 3",
+            "tool_name": "t_number_list_to_sum",
+            "parameters": {{"numbers": [2, 3]}},
+            "reasoning": "User wants simple addition"
+        }},
+        {{
+            "step_number": 2,
+            "action_type": "response",
+            "description": "Return the result to user",
+            "tool_name": null,
+            "parameters": {{}},
+            "reasoning": "Calculation complete, provide answer"
+        }}
+    ],
+    "reasoning": "Simple arithmetic query requiring one calculation tool",
+    "expected_outcome": "User receives sum of 2 and 3",
+    "confidence": 1.0,
+    "should_continue": false
+}}
+
+Now create an action plan for the given information and respond ONLY with the JSON object:
+"""
+
+# ============================================================================
+# ORIGINAL SYSTEM PROMPT (Legacy - kept for backward compatibility)
+# ============================================================================
+
 # System prompt template (to be formatted with tools_description)
 SYSTEM_PROMPT_TEMPLATE = """
 You are a helpful assistant that can perform various tasks including math calculations, PowerPoint operations, and sending emails.

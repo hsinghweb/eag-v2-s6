@@ -1,7 +1,7 @@
 """
 Pydantic models for AI agent input and output validation.
 """
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any, Literal
 
 
@@ -131,3 +131,107 @@ class FormattedPrompt(BaseModel):
     content: str
     context: PromptContext
 
+
+# ============================================================================
+# COGNITIVE LAYERS MODELS
+# ============================================================================
+
+# 1. PERCEPTION LAYER MODELS
+class ThoughtType(str):
+    """Enum-like class for thought types"""
+    PLANNING = "Planning"
+    ANALYSIS = "Analysis"
+    DECISION_MAKING = "Decision Making"
+    PROBLEM_SOLVING = "Problem Solving"
+    MEMORY_INTEGRATION = "Memory Integration"
+    SELF_REFLECTION = "Self-Reflection"
+    GOAL_SETTING = "Goal Setting"
+    PRIORITIZATION = "Prioritization"
+
+
+class PerceptionOutput(BaseModel):
+    """Output from the Perception Layer"""
+    intent: str = Field(..., description="Primary intent of the user query")
+    entities: Dict[str, Any] = Field(default_factory=dict, description="Extracted entities from the query")
+    thought_type: str = Field(..., description="Type of cognitive thought involved")
+    extracted_facts: List[str] = Field(default_factory=list, description="Facts extracted from the query")
+    requires_tools: bool = Field(default=False, description="Whether the query requires tool execution")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Confidence in perception")
+
+
+# 2. MEMORY LAYER MODELS
+class MemoryFact(BaseModel):
+    """A single fact stored in memory"""
+    content: str = Field(..., description="The fact content")
+    timestamp: Optional[str] = Field(default=None, description="When the fact was stored")
+    source: str = Field(default="user", description="Source of the fact (user, system, tool)")
+    relevance_score: float = Field(default=1.0, ge=0.0, le=1.0, description="Relevance score")
+
+
+class MemoryState(BaseModel):
+    """State of the agent's memory"""
+    facts: List[MemoryFact] = Field(default_factory=list, description="Stored facts")
+    user_preferences: Dict[str, Any] = Field(default_factory=dict, description="User preferences")
+    context: Dict[str, Any] = Field(default_factory=dict, description="Current context information")
+    conversation_summary: str = Field(default="", description="Summary of conversation so far")
+
+
+class MemoryQuery(BaseModel):
+    """Query to retrieve relevant memories"""
+    query: str = Field(..., description="Query to search memories")
+    max_results: int = Field(default=5, ge=1, le=20, description="Maximum number of results")
+    min_relevance: float = Field(default=0.5, ge=0.0, le=1.0, description="Minimum relevance score")
+
+
+class MemoryRetrievalResult(BaseModel):
+    """Result from memory retrieval"""
+    relevant_facts: List[MemoryFact] = Field(default_factory=list, description="Retrieved facts")
+    context: Dict[str, Any] = Field(default_factory=dict, description="Retrieved context")
+    summary: str = Field(default="", description="Summary of retrieved information")
+
+
+# 3. DECISION-MAKING LAYER MODELS
+class ActionStep(BaseModel):
+    """A single step in an action plan"""
+    step_number: int = Field(..., ge=1, description="Step number in sequence")
+    action_type: str = Field(..., description="Type of action (tool_call, response, query_memory, etc.)")
+    description: str = Field(..., description="Description of the action")
+    tool_name: Optional[str] = Field(default=None, description="Tool to call if action_type is tool_call")
+    parameters: Dict[str, Any] = Field(default_factory=dict, description="Parameters for the action")
+    reasoning: str = Field(default="", description="Reasoning behind this step")
+
+
+class DecisionOutput(BaseModel):
+    """Output from the Decision-Making Layer"""
+    action_plan: List[ActionStep] = Field(..., description="Sequence of actions to take")
+    reasoning: str = Field(..., description="Overall reasoning for the decision")
+    expected_outcome: str = Field(default="", description="Expected outcome of the plan")
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Confidence in the decision")
+    should_continue: bool = Field(default=True, description="Whether to continue with more iterations")
+
+
+# 4. ACTION LAYER MODELS
+class ActionInput(BaseModel):
+    """Input for action execution"""
+    action_step: ActionStep = Field(..., description="Action step to execute")
+    available_tools: List[str] = Field(default_factory=list, description="List of available tool names")
+
+
+class ActionResult(BaseModel):
+    """Result from action execution"""
+    success: bool = Field(..., description="Whether the action succeeded")
+    result: Optional[Any] = Field(default=None, description="Result data from the action")
+    error: Optional[str] = Field(default=None, description="Error message if failed")
+    execution_time: float = Field(default=0.0, description="Time taken to execute")
+    facts_to_remember: List[str] = Field(default_factory=list, description="New facts to store in memory")
+
+
+# AGENT ORCHESTRATION MODELS
+class CognitiveState(BaseModel):
+    """Complete cognitive state of the agent"""
+    perception: Optional[PerceptionOutput] = None
+    memory: MemoryState = Field(default_factory=MemoryState)
+    decision: Optional[DecisionOutput] = None
+    action_results: List[ActionResult] = Field(default_factory=list)
+    iteration: int = Field(default=0, ge=0)
+    complete: bool = Field(default=False)
