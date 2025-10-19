@@ -62,100 +62,6 @@ logger = logging.getLogger(__name__)
 mcp = FastMCP("Calculator")
 
 # DEFINE TOOLS
-
-# Addition tool
-@mcp.tool()
-def add(a: int, b: int) -> int:
-    """Add two numbers"""
-    logger.info(f"Calling add(a: {a}, b: {b}) -> int")
-    return int(a + b)
-
-@mcp.tool()
-def add_list(lst: list) -> int:
-    """Add all numbers in a list"""
-    logger.info(f"Calling add_list(lst: {lst}) -> int")
-    return sum(lst)
-
-# Subtraction tool
-@mcp.tool()
-def subtract(a: int, b: int) -> int:
-    """Subtract two numbers"""
-    logger.info(f"Calling subtract(a: {a}, b: {b}) -> int")
-    return int(a - b)
-
-# Multiplication tool
-@mcp.tool()
-def multiply(a: int, b: int) -> int:
-    """Multiply two numbers"""
-    logger.info(f"Calling multiply(a: {a}, b: {b}) -> int")
-    return int(a * b)
-
-# Division tool
-@mcp.tool() 
-def divide(a: int, b: int) -> float:
-    """Divide two numbers"""
-    logger.info(f"Calling divide(a: {a}, b: {b}) -> float")
-    return float(a / b)
-
-# Power tool
-@mcp.tool()
-def power(a: int, b: int) -> int:
-    """Power of two numbers"""
-    logger.info(f"Calling power(a: {a}, b: {b}) -> int")
-    return int(a ** b)
-
-# Square root tool
-@mcp.tool()
-def sqrt(a: int) -> float:
-    """Square root of a number"""
-    logger.info(f"Calling sqrt(a: {a}) -> float")
-    return float(a ** 0.5)
-
-# Cube root tool
-@mcp.tool()
-def cbrt(a: int) -> float:
-    """Cube root of a number"""
-    logger.info(f"Calling cbrt(a: {a}) -> float")
-    return float(a ** (1/3))
-
-# Factorial tool
-@mcp.tool()
-def factorial(a: int) -> int:
-    """Factorial of a number"""
-    logger.info(f"Calling factorial(a: {a}) -> int")
-    return int(math.factorial(a))
-
-@mcp.tool()
-def create_thumbnail(image_path: str) -> Image:
-    """Create a thumbnail from an image"""
-    logger.info(f"Calling create_thumbnail(image_path: {image_path}) -> Image")
-    img = PILImage.open(image_path)
-    img.thumbnail((100, 100))
-    return Image(data=img.tobytes(), format="png")
-
-@mcp.tool()
-def strings_to_chars_to_int(string: str) -> list[int]:
-    """Return the ASCII values of the characters in a word"""
-    logger.info(f"Calling strings_to_chars_to_int(string: {string}) -> list[int]")
-    return [int(ord(char)) for char in string]
-
-@mcp.tool()
-def int_list_to_exponential_sum(int_list: list) -> float:
-    """Return sum of exponentials of numbers in a list"""
-    logger.info(f"Calling int_list_to_exponential_sum(int_list: {int_list}) -> float")
-    return sum(math.exp(i) for i in int_list)
-
-@mcp.tool()
-def fibonacci_numbers(n: int) -> list:
-    """Return the first n Fibonacci Numbers"""
-    logger.info(f"Calling fibonacci_numbers(n: {n}) -> list")
-    if n <= 0:
-        return []
-    fib_sequence = [0, 1]
-    for _ in range(2, n):
-        fib_sequence.append(fib_sequence[-1] + fib_sequence[-2])
-    return fib_sequence[:n]
-
 @mcp.tool()
 async def close_powerpoint() -> dict:
     """Close PowerPoint"""
@@ -524,30 +430,6 @@ async def send_gmail(content: str) -> dict:
                 )
             ]
         }
-
-# DEFINE RESOURCES
-
-# Add a dynamic greeting resource
-@mcp.resource("greeting://{name}")
-def get_greeting(name: str) -> str:
-    """Get a personalized greeting"""
-    logger.info(f"Calling get_greeting(name: {name}) -> str")
-    return f"Hello, {name}!"
-
-# DEFINE AVAILABLE PROMPTS
-@mcp.prompt()
-def review_code(code: str) -> str:
-    logger.info(f"Calling review_code(code: {code[:50]}...) -> str")
-    return f"Please review this code:\n\n{code}"
-
-@mcp.prompt()
-def debug_error(error: str) -> list[base.Message]:
-    logger.info(f"Calling debug_error(error: {error[:50]}...) -> list[base.Message]")
-    return [
-        base.UserMessage("I'm seeing this error:"),
-        base.UserMessage(error),
-        base.AssistantMessage("I'll help debug that. What have you tried so far?"),
-    ]
 
 # TOOLS WRAPPING FUNCTIONS FROM tools.py
 @mcp.tool()
