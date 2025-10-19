@@ -124,3 +124,8 @@ dmypy.json
 
 # Virtual environments
 .venv
+
+# Agent logs and memory files
+logs/
+*.log
+agent_memory.json

@@ -6,6 +6,7 @@ It stores and retrieves facts, user preferences, and context information.
 """
 import logging
 import json
+import os
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from pathlib import Path
@@ -17,6 +18,10 @@ from .models import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Memory file rotation settings
+MAX_MEMORY_SIZE_MB = 5  # Maximum size before rotation
+MAX_ROTATED_FILES = 10  # Keep only the last N rotated files
 
 
 class MemoryLayer:
@@ -186,19 +191,81 @@ class MemoryLayer:
         self.memory_state = MemoryState()
         logger.warning("[MEMORY] Memory cleared")
     
+    def _rotate_memory_file(self):
+        """
+        Rotate memory file if it exceeds size limit.
+        Renames current file with timestamp and creates a new one.
+        """
+        try:
+            # Check if file exists and its size
+            if not os.path.exists(self.memory_file):
+                return
+            
+            file_size_mb = os.path.getsize(self.memory_file) / (1024 * 1024)
+            
+            if file_size_mb < MAX_MEMORY_SIZE_MB:
+                return  # No rotation needed
+            
+            # Create rotated filename with timestamp
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            base_path = Path(self.memory_file)
+            rotated_file = base_path.parent / f"{base_path.stem}_{timestamp}{base_path.suffix}"
+            
+            # Rename current file
+            os.rename(self.memory_file, rotated_file)
+            logger.info(f"[MEMORY] Rotated memory file to {rotated_file.name} (size: {file_size_mb:.2f}MB)")
+            
+            # Clean up old rotated files (keep only last N)
+            self._cleanup_rotated_files()
+            
+        except Exception as e:
+            logger.error(f"Failed to rotate memory file: {e}")
+    
+    def _cleanup_rotated_files(self):
+        """
+        Keep only the last MAX_ROTATED_FILES rotated memory files.
+        Deletes older ones.
+        """
+        try:
+            base_path = Path(self.memory_file)
+            parent_dir = base_path.parent
+            stem = base_path.stem
+            suffix = base_path.suffix
+            
+            # Find all rotated files matching pattern
+            pattern = f"{stem}_*{suffix}"
+            rotated_files = sorted(parent_dir.glob(pattern), key=os.path.getmtime, reverse=True)
+            
+            # Delete files beyond the limit
+            for old_file in rotated_files[MAX_ROTATED_FILES:]:
+                os.remove(old_file)
+                logger.info(f"[MEMORY] Deleted old rotated file: {old_file.name}")
+                
+        except Exception as e:
+            logger.error(f"Failed to cleanup rotated files: {e}")
+    
     def save_memory(self):
         """
         Save memory to JSON file for persistence.
+        Automatically rotates the file if it exceeds size limit.
         """
         if not self.memory_file:
             logger.warning("No memory file specified, cannot save")
             return
         
         try:
+            # Check if rotation is needed before saving
+            self._rotate_memory_file()
+            
+            # Save memory to file
             memory_dict = self.memory_state.model_dump()
             with open(self.memory_file, 'w') as f:
                 json.dump(memory_dict, f, indent=2)
-            logger.info(f"[MEMORY] Memory saved to {self.memory_file}")
+            
+            # Log file size
+            file_size_kb = os.path.getsize(self.memory_file) / 1024
+            logger.info(f"[MEMORY] Memory saved to {self.memory_file} (size: {file_size_kb:.1f}KB)")
+            
         except Exception as e:
             logger.error(f"Failed to save memory: {e}")
     
