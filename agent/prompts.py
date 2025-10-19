@@ -139,7 +139,7 @@ Query: "What is 2 + 3?"
             "action_type": "tool_call",
             "description": "Add numbers 2 and 3",
             "tool_name": "t_number_list_to_sum",
-            "parameters": {{"numbers": [2, 3]}},
+            "parameters": {{"input": {{"numbers": [2, 3]}}}},
             "reasoning": "User wants simple addition"
         }},
         {{
@@ -156,6 +156,12 @@ Query: "What is 2 + 3?"
     "confidence": 1.0,
     "should_continue": false
 }}
+
+**Important:** All tool parameters must be wrapped in an "input" object. For example:
+- t_number_list_to_sum: {{"input": {{"numbers": [1, 2, 3]}}}}
+- t_calculate_difference: {{"input": {{"a": 300, "b": 50}}}}
+- send_gmail: {{"input": {{"content": "email text"}}}}
+- draw_rectangle: {{"input": {{"x1": 1, "y1": 1, "x2": 8, "y2": 6}}}}
 
 Now create an action plan for the given information and respond ONLY with the JSON object:
 """

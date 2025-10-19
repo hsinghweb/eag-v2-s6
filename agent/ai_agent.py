@@ -200,13 +200,26 @@ class CognitiveAgent:
             # ============================================================
             # FINALIZATION
             # ============================================================
-            if final_result is None:
-                # No explicit final result - compile from action results
-                successful_results = [
-                    str(ar.result) for ar in self.state.action_results 
-                    if ar.success and ar.result is not None
-                ]
-                final_result = " | ".join(successful_results) if successful_results else "Task completed"
+            # Extract actual computed values from tool executions
+            tool_results = []
+            if self.state.decision and self.state.decision.action_plan:
+                for i, ar in enumerate(self.state.action_results):
+                    if ar.success and ar.result is not None:
+                        # Get the corresponding action step to check type
+                        if i < len(self.state.decision.action_plan):
+                            action_step = self.state.decision.action_plan[i]
+                            # Only include tool_call results (actual computations)
+                            if action_step.action_type == "tool_call":
+                                tool_results.append(str(ar.result))
+            
+            # Build final result from tool executions or use final_result if it's meaningful
+            if tool_results:
+                # We have actual computed values - use those
+                final_result = tool_results[-1] if len(tool_results) == 1 else " | ".join(tool_results)
+                logger.info(f"[AGENT] Using computed result: {final_result}")
+            elif final_result is None:
+                # No results at all
+                final_result = "Task completed"
             
             # Save memory to disk
             self.memory.save_memory()

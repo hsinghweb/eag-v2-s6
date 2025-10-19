@@ -59,6 +59,66 @@
       "timestamp": "2025-10-19T20:47:04.808209",
       "source": "action",
       "relevance_score": 1.0
+    },
+    {
+      "content": "User wants to add 100 and 200",
+      "timestamp": "2025-10-19T20:53:02.893492",
+      "source": "perception",
+      "relevance_score": 1.0
+    },
+    {
+      "content": "Called tool t_number_list_to_sum",
+      "timestamp": "2025-10-19T20:53:06.491335",
+      "source": "action",
+      "relevance_score": 1.0
+    },
+    {
+      "content": "Parameters: {'numbers': [100, 200]}",
+      "timestamp": "2025-10-19T20:53:06.491335",
+      "source": "action",
+      "relevance_score": 1.0
+    },
+    {
+      "content": "Result: Error executing tool t_number_list_to_sum: 1 validation error for t_number_list_to_sumArguments\ninput\n  Field required [type=missing, input_value={'numbers': [100, 200]}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.11/v/missing",
+      "timestamp": "2025-10-19T20:53:06.491335",
+      "source": "action",
+      "relevance_score": 1.0
+    },
+    {
+      "content": "Generated response: Provide the calculated sum to the user.",
+      "timestamp": "2025-10-19T20:53:06.492336",
+      "source": "action",
+      "relevance_score": 1.0
+    },
+    {
+      "content": "User wants to add 100 and 200",
+      "timestamp": "2025-10-19T20:56:00.863783",
+      "source": "perception",
+      "relevance_score": 1.0
+    },
+    {
+      "content": "Called tool t_number_list_to_sum",
+      "timestamp": "2025-10-19T20:56:07.429482",
+      "source": "action",
+      "relevance_score": 1.0
+    },
+    {
+      "content": "Parameters: {'input': {'numbers': [100, 200]}}",
+      "timestamp": "2025-10-19T20:56:07.429482",
+      "source": "action",
+      "relevance_score": 1.0
+    },
+    {
+      "content": "Result: {\n  \"result\": 300.0\n}",
+      "timestamp": "2025-10-19T20:56:07.429482",
+      "source": "action",
+      "relevance_score": 1.0
+    },
+    {
+      "content": "Generated response: Provide the calculated sum to the user.",
+      "timestamp": "2025-10-19T20:56:07.430467",
+      "source": "action",
+      "relevance_score": 1.0
     }
   ],
   "user_preferences": {},
