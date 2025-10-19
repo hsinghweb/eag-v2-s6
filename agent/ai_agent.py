@@ -9,6 +9,7 @@ import logging
 from datetime import datetime
 import traceback
 import json
+from .prompts import SYSTEM_PROMPT_TEMPLATE
 
 # Configure logging
 log_dir = "logs"
@@ -48,68 +49,6 @@ last_response = None
 iteration = 0
 iteration_response = []
 conversation_history = []
-
-# System prompt template (to be formatted with tools_description)
-SYSTEM_PROMPT_TEMPLATE = """
-You are a helpful assistant that can perform various tasks including math calculations, PowerPoint operations, and sending emails.
-
-Available tools:
-{tools_description}
-
-You must respond with EXACTLY ONE line in one of these formats (no additional text):
-
-1. For function calls:
-   FUNCTION_CALL: {{"name": "<function_name>", "args": <args>, "reasoning_type": "<type>", "step": "<step description>"}}
-   - <args> is a JSON array or object matching the tool's schema.
-   - <reasoning_type> is one of: "Arithmetic", "Logical", "Entity Lookup", etc.
-   - <step> is a short description of what this step is doing.
-
-2. For self-checks:
-   SELF_CHECK: Is the result reasonable? -> Yes/No
-
-3. For fallbacks:
-   FUNCTION_CALL: {{"name": "fallback_reasoning", "description": "<step description>"}}
-
-4. For final answers:
-   FINAL_ANSWER: [your final answer here]
-
-Important Rules:
-- Reason step by step.
-- Use function calls to split reasoning, calculation, and verification.
-- Tag each step with the reasoning type.
-- Always do a SELF_CHECK after calculation or verification.
-- If a tool fails or you are uncertain, use a fallback_reasoning call.
-- Maintain conversation_history and update it each round.
-- ONLY perform the exact operations requested by the user.
-- Do not repeat function calls with the same parameters.
-- Only give FINAL_ANSWER when you have completed all necessary operations.
-
-Examples:
-User: What is 2 + 3?
-FUNCTION_CALL: {{"name": "number_list_to_sum", "args": [2,3], "reasoning_type": "Arithmetic", "step": "Add 2 and 3"}}
-SELF_CHECK: Is the result reasonable? -> Yes
-FINAL_ANSWER: [Query: What is 2 + 3? Result: 5]
-
-User: Add 2 and 3 and show in PowerPoint
-FUNCTION_CALL: {{"name": "open_powerpoint", "args": [], "reasoning_type": "Entity Lookup", "step": "Open PowerPoint"}}
-FUNCTION_CALL: {{"name": "draw_rectangle", "args": [1,1,8,6], "reasoning_type": "Entity Lookup", "step": "Draw rectangle"}}
-FUNCTION_CALL: {{"name": "add_text_in_powerpoint", "args": ["Query: Add 2 and 3 and show in PowerPoint\\nResult: 2 + 3 = 5",2,2,24,True], "reasoning_type": "Entity Lookup", "step": "Add text"}}
-FUNCTION_CALL: {{"name": "close_powerpoint", "args": [], "reasoning_type": "Entity Lookup", "step": "Close PowerPoint"}}
-SELF_CHECK: Is the result reasonable? -> Yes
-FINAL_ANSWER: [Query: Add 2 and 3 and show in PowerPoint. Result: 5. The result has been added to PowerPoint.]
-
-User: Add 2 and 3 and email me the result
-FUNCTION_CALL: {{"name": "number_list_to_sum", "args": [2,3], "reasoning_type": "Arithmetic", "step": "Add 2 and 3"}}
-SELF_CHECK: Is the result reasonable? -> Yes
-FUNCTION_CALL: {{"name": "send_gmail", "args": ["Query: Add 2 and 3 and email me the result\\n\\nResult: 2 + 3 = 5"], "reasoning_type": "Entity Lookup", "step": "Send result by email"}}
-SELF_CHECK: Is the result reasonable? -> Yes
-FINAL_ANSWER: [Query: Add 2 and 3 and email me the result. Result: 5. The result has been sent via email.]
-
-User: Add 2 and 3
-FUNCTION_CALL: {{"name": "number_list_to_sum", "args": [2,3], "reasoning_type": "Arithmetic", "step": "Add 2 and 3"}}
-SELF_CHECK: Is the result reasonable? -> Yes
-FINAL_ANSWER: [Query: Add 2 and 3. Result: 5]
-"""
 
 async def generate_with_timeout(model, prompt):
     """Generate content with a timeout"""
