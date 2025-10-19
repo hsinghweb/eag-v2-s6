@@ -1,16 +1,21 @@
 import os
+import sys
+from pathlib import Path
+
+# Add parent directory to path to allow imports when run directly
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from mcp.server.fastmcp import FastMCP, Image
 from mcp.server.fastmcp.prompts import base
 from mcp.types import TextContent
 from PIL import Image as PILImage
 import math
-import sys
 from pptx import Presentation
 from pptx.util import Inches
 from pptx.dml.color import RGBColor
 from pptx.util import Pt
 import asyncio
-from tools import (
+from server_mcp.tools import (
     number_list_to_sum,
     calculate_difference,
     number_list_to_product,

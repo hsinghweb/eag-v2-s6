@@ -331,7 +331,7 @@ async def main(query: str):
         logger.info("Establishing connection to MCP server...")
         server_params = StdioServerParameters(
             command="python",
-            args=["mcp-server.py", "dev"]
+            args=["server_mcp/mcp_server.py", "dev"]
         )
 
         async with stdio_client(server_params) as (read, write):

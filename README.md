@@ -53,7 +53,7 @@ A versatile AI assistant that can perform mathematical calculations, create Powe
 
 4. Start the MCP tool server (in one terminal):
    ```bash
-   python mcp-server.py dev
+   python server_mcp/mcp_server.py dev
    ```
 
 5. Start the AI agent (in another terminal):
@@ -98,7 +98,7 @@ A versatile AI assistant that can perform mathematical calculations, create Powe
 
 ### Project Structure
 - `agent/ai_agent.py`: Core AI agent logic, conversation memory, and tool integration
-- `mcp-server.py`: MCP server for tool execution, including fallback reasoning
+- `server_mcp/mcp_server.py`: MCP server for tool execution, including fallback reasoning
 - `chrome-extension/`: Frontend Chrome extension code
 - `requirements.txt` / `pyproject.toml`: Python dependencies and project metadata
 
