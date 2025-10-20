@@ -73,7 +73,7 @@ class CognitiveAgent:
     4. Action: Executing the plan
     """
     
-    def __init__(self, session: ClientSession, tools: list, preferences: Optional[Dict[str, Any]] = None):
+    def __init__(self, session: ClientSession, tools: list, preferences: Optional[Dict[str, Any]] = None, memory_file: Optional[str] = None):
         """
         Initialize the Cognitive Agent.
         
@@ -81,14 +81,19 @@ class CognitiveAgent:
             session: MCP client session
             tools: Available MCP tools
             preferences: User preferences (math ability, location, etc.)
+            memory_file: Path to memory file (if None, creates a timestamped one)
         """
         self.session = session
         self.tools = tools
         self.preferences = preferences or {}
         
+        # Create timestamped memory file if not provided
+        if memory_file is None:
+            memory_file = os.path.join(log_dir, f"agent_memory_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+        
         # Initialize cognitive layers
         self.perception = PerceptionLayer(model, user_preferences=self.preferences)
-        self.memory = MemoryLayer(memory_file="logs/agent_memory.json")
+        self.memory = MemoryLayer(memory_file=memory_file)
         self.decision = DecisionLayer(model, user_preferences=self.preferences)
         self.action = ActionLayer(session, tools)
         
@@ -100,6 +105,7 @@ class CognitiveAgent:
         self.state = CognitiveState()
         
         logger.info("[AGENT] Cognitive Agent initialized with 4 layers")
+        logger.info(f"[AGENT] Memory file: {memory_file}")
         if self.preferences:
             logger.info(f"[AGENT] User preferences loaded: {self.preferences}")
     
@@ -116,13 +122,10 @@ class CognitiveAgent:
                 relevance_score=1.0
             )
         
-        # Also store in user_preferences dict
+        # Store in user_preferences dict (always update to ensure proper capture)
         for key, value in self.preferences.items():
-            if key not in self.memory.memory_state.user_preferences:
-                self.memory.memory_state.user_preferences[key] = value
+            self.memory.memory_state.user_preferences[key] = value
         
-        # Save memory to persist preferences
-        self.memory.save_memory()
         logger.info(f"[AGENT] Stored {len(self.preferences)} user preferences in memory")
     
     async def process_query(self, query: str) -> AgentResponse:
@@ -150,6 +153,9 @@ class CognitiveAgent:
             # Reset state for new query
             self.state = CognitiveState()
             final_result = None
+            
+            # Store initial query in memory context
+            self.memory.update_context("initial_query", query)
             
             # Cognitive loop
             while self.state.iteration < MAX_ITERATIONS:

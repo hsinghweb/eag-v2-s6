@@ -1,7 +1,7 @@
 [project]
-name = "eag-v2-s5"
+name = "eag-v2-s6"
 version = "0.1.0"
-description = "Add your description here"
+description = "eag-v2-s6"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -24,8 +24,8 @@ dependencies = [
 # ...add any optional dependencies here...
 
 [project.urls]
-Homepage = "https://github.com/yourusername/eag-v2-s5"
-Repository = "https://github.com/yourusername/eag-v2-s5"
+Homepage = "https://github.com/yourusername/eag-v2-s6"
+Repository = "https://github.com/yourusername/eag-v2-s6"
 
 [tool.uv]
 # ...uv-specific configuration if needed...

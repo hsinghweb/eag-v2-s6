@@ -33,18 +33,19 @@ class MemoryLayer:
     This mimics human memory: remembering facts and retrieving relevant info later.
     """
     
-    def __init__(self, memory_file: Optional[str] = None):
+    def __init__(self, memory_file: Optional[str] = None, load_existing: bool = False):
         """
         Initialize the Memory Layer.
         
         Args:
             memory_file: Optional path to JSON file for persistent memory
+            load_existing: If True, load existing memory file; otherwise start fresh
         """
         self.memory_state = MemoryState()
         self.memory_file = memory_file
         
-        # Load existing memory if file exists
-        if memory_file and Path(memory_file).exists():
+        # Load existing memory only if explicitly requested and file exists
+        if load_existing and memory_file and Path(memory_file).exists():
             self.load_memory()
         
         logger.info("[MEMORY] Memory Layer initialized")

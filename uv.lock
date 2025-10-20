@@ -147,7 +147,7 @@ wheels = [
 ]
 
 [[package]]
-name = "eag-v2-s5"
+name = "eag-v2-s6"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
