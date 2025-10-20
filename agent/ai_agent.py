@@ -181,11 +181,26 @@ class CognitiveAgent:
                         # Return appropriate format
                         if extracted_value is not None:
                             if needs_string:
-                                # Format nicely for text output
+                                # Format nicely for text output including query context
+                                # Get the initial query from memory context
+                                initial_query = self.memory.memory_state.context.get("initial_query", "")
+                                
+                                # Format the result value
                                 if isinstance(extracted_value, float) and extracted_value.is_integer():
-                                    return f"The result is: {int(extracted_value)}"
+                                    result_str = str(int(extracted_value))
                                 else:
-                                    return f"The result is: {extracted_value}"
+                                    result_str = str(extracted_value)
+                                
+                                # Build comprehensive email content
+                                email_content = "Math AI Agent Result\n"
+                                email_content += "=" * 40 + "\n\n"
+                                if initial_query:
+                                    email_content += f"Query: {initial_query}\n\n"
+                                email_content += f"Result: {result_str}\n\n"
+                                email_content += "=" * 40 + "\n"
+                                email_content += "Computed by Math AI Agent"
+                                
+                                return email_content
                             else:
                                 # Return numeric value for calculations
                                 return extracted_value

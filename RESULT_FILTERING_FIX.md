@@ -42,13 +42,14 @@ if action_step.action_type == "tool_call" and action_step.tool_name not in NON_M
 
 **Result**: Only mathematical computation results (5.0) are now displayed, not email/PowerPoint operation results.
 
-### 2. Smart Parameter Type Conversion
+### 2. Smart Parameter Type Conversion with Query Context
 
-**File**: `agent/ai_agent.py` (lines 131-200)
+**File**: `agent/ai_agent.py` (lines 131-215)
 
 Enhanced `_replace_result_placeholders` to:
 - Detect parameter names that require strings (`content`, `text`, `message`, `body`, `description`)
 - Convert numeric results to formatted strings for these parameters
+- Include the original query from memory context in the formatted output
 - Keep numeric format for mathematical parameters
 
 ```python
@@ -56,35 +57,102 @@ Enhanced `_replace_result_placeholders` to:
 needs_string = param_name and param_name.lower() in ['content', 'text', 'message', 'body', 'description']
 
 if needs_string:
-    # Format nicely for text output
-    if isinstance(extracted_value, float) and extracted_value.is_integer():
-        return f"The result is: {int(extracted_value)}"
-    else:
-        return f"The result is: {extracted_value}"
+    # Get the initial query from memory context
+    initial_query = self.memory.memory_state.context.get("initial_query", "")
+    
+    # Build comprehensive email content
+    email_content = f"Math AI Agent Result\n"
+    email_content += f"{'=' * 40}\n\n"
+    if initial_query:
+        email_content += f"Query: {initial_query}\n\n"
+    email_content += f"Result: {result_str}\n\n"
+    email_content += f"{'=' * 40}\n"
+    email_content += f"Computed by Math AI Agent"
+    
+    return email_content
 else:
     # Return numeric value for calculations
     return extracted_value
 ```
 
-**Result**: When chaining results to email, the numeric value is automatically formatted as a readable string.
+**Result**: When chaining results to email, the numeric value is automatically formatted as a professional email with both the original query and the computed result.
 
 ## Testing
 
-To verify the fix, test with:
+To verify the fix, test with any math ability query that includes email sending:
+
+### Example 1: Arithmetic
 ```
 Query: "add 2 and 3 and send result in email"
 ```
 
 **Expected Behavior**:
 1. Agent calculates: 2 + 3 = 5
-2. Final result displayed: "5.0" (not "5.0, 1.0")
-3. Email sent successfully with content: "The result is: 5"
+2. Final result displayed: **"5.0"** (not "5.0, 1.0")
+3. Email sent successfully with formatted content:
+   ```
+   Math AI Agent Result
+   ========================================
+   
+   Query: add 2 and 3 and send result in email
+   
+   Result: 5
+   
+   ========================================
+   Computed by Math AI Agent
+   ```
+
+### Example 2: Algebra
+```
+Query: "solve equation x + 4 = 9 and email the result"
+```
+
+**Expected Email Content**:
+```
+Math AI Agent Result
+========================================
+
+Query: solve equation x + 4 = 9 and email the result
+
+Result: 5
+
+========================================
+Computed by Math AI Agent
+```
+
+### Example 3: Geometry
+```
+Query: "calculate area of circle with radius 5 and send to email"
+```
+
+**Expected Email Content**:
+```
+Math AI Agent Result
+========================================
+
+Query: calculate area of circle with radius 5 and send to email
+
+Result: 78.54
+
+========================================
+Computed by Math AI Agent
+```
+
+**Works for All Math Abilities**: Arithmetic, Algebra, Geometry, Statistics, Logical Reasoning
 
 ## Files Modified
 
 1. **agent/ai_agent.py**
-   - Lines 131-200: Enhanced `_replace_result_placeholders` with smart type conversion
+   - Lines 131-215: Enhanced `_replace_result_placeholders` with smart type conversion and query context inclusion
    - Lines 305-341: Added NON_MATH_TOOLS filter for result display
+
+## Key Features
+
+✅ **Context-Aware Email Formatting**: Emails automatically include both the original query and computed result  
+✅ **Universal Math Support**: Works across all math abilities (Arithmetic, Algebra, Geometry, Statistics, Logical)  
+✅ **Professional Layout**: Clean, formatted email content with clear sections  
+✅ **Smart Type Conversion**: Automatically converts numeric results to formatted strings for text parameters  
+✅ **Result Filtering**: Only mathematical computations appear in final displayed result
 
 ## Environment Requirements
 
