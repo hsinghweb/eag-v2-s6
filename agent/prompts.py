@@ -144,6 +144,14 @@ Your job is to output a JSON object with this structure:
 - t_pythagorean_leg: Calculate unknown leg from one leg and hypotenuse
 - t_chord_length: Calculate chord length directly from radius and distance from center (all-in-one solution)
 
+**Important Logical Tools - Parameter Format:**
+- t_logical_and: Takes {{"input": {{"values": [bool1, bool2, ...]}}}} - Returns True if ALL values are True
+- t_logical_or: Takes {{"input": {{"values": [bool1, bool2, ...]}}}} - Returns True if ANY value is True
+- t_logical_not: Takes {{"input": {{"value": bool}}}} - Returns opposite boolean value
+- t_xor: Takes {{"input": {{"a": bool, "b": bool}}}} - Returns True if exactly one is True
+- t_implication: Takes {{"input": {{"a": bool, "b": bool}}}} - Returns "a implies b"
+- Note: Most logical tools use "values" as a LIST, not individual "a" and "b" parameters!
+
 **Planning Guidelines:**
 1. Break complex tasks into sequential steps
 2. Consider what information you have from memory
@@ -318,9 +326,46 @@ Query: "Two consecutive numbers sum to 41. What are they?"
     "should_continue": false
 }}
 
+Query: "Evaluate true AND false and send result to email"
+{{
+    "action_plan": [
+        {{
+            "step_number": 1,
+            "action_type": "tool_call",
+            "description": "Evaluate logical AND of true and false",
+            "tool_name": "t_logical_and",
+            "parameters": {{"input": {{"values": [true, false]}}}},
+            "reasoning": "Logical reasoning: AND operation returns true only if ALL values are true"
+        }},
+        {{
+            "step_number": 2,
+            "action_type": "tool_call",
+            "description": "Send result via email",
+            "tool_name": "send_gmail",
+            "parameters": {{"input": {{"content": "RESULT_FROM_STEP_1"}}}},
+            "reasoning": "Email the computed boolean result to the user"
+        }},
+        {{
+            "step_number": 3,
+            "action_type": "response",
+            "description": "Confirm result sent",
+            "tool_name": null,
+            "parameters": {{}},
+            "reasoning": "Operation complete"
+        }}
+    ],
+    "reasoning": "Logical evaluation with email delivery using result chaining",
+    "expected_outcome": "User receives false (AND of true and false), sent via email",
+    "confidence": 1.0,
+    "should_continue": false
+}}
+
 **Important:** All tool parameters must be wrapped in an "input" object. For example:
 - t_number_list_to_sum: {{"input": {{"numbers": [1, 2, 3]}}}}
 - t_calculate_difference: {{"input": {{"a": 300, "b": 50}}}}
+- t_logical_and: {{"input": {{"values": [true, false, true]}}}}  ← Note: "values" is a LIST
+- t_logical_or: {{"input": {{"values": [false, false, true]}}}}  ← Note: "values" is a LIST
+- t_logical_not: {{"input": {{"value": true}}}}  ← Note: "value" is singular
 - send_gmail: {{"input": {{"content": "email text"}}}}
 - draw_rectangle: {{"input": {{"x1": 1, "y1": 1, "x2": 8, "y2": 6}}}}
 

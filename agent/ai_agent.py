@@ -161,7 +161,7 @@ class CognitiveAgent:
                         
                         # Try to extract value from result
                         extracted_value = None
-                        if isinstance(result, (int, float)):
+                        if isinstance(result, (int, float, bool)):
                             extracted_value = result
                         elif isinstance(result, str):
                             try:
@@ -170,7 +170,11 @@ class CognitiveAgent:
                                 # Extract value from common fields
                                 for key in ['solution', 'result', 'value', 'answer']:
                                     if key in parsed and parsed[key] is not None:
-                                        extracted_value = float(parsed[key])
+                                        # Check if it's a boolean first
+                                        if isinstance(parsed[key], bool):
+                                            extracted_value = parsed[key]
+                                        else:
+                                            extracted_value = float(parsed[key])
                                         break
                             except:
                                 # Try to extract number directly
@@ -186,7 +190,9 @@ class CognitiveAgent:
                                 initial_query = self.memory.memory_state.context.get("initial_query", "")
                                 
                                 # Format the result value
-                                if isinstance(extracted_value, float) and extracted_value.is_integer():
+                                if isinstance(extracted_value, bool):
+                                    result_str = "True" if extracted_value else "False"
+                                elif isinstance(extracted_value, float) and extracted_value.is_integer():
                                     result_str = str(int(extracted_value))
                                 else:
                                     result_str = str(extracted_value)
@@ -202,7 +208,7 @@ class CognitiveAgent:
                                 
                                 return email_content
                             else:
-                                # Return numeric value for calculations
+                                # Return numeric/boolean value for calculations
                                 return extracted_value
                         
                         return result
@@ -362,10 +368,15 @@ class CognitiveAgent:
                                     # Handle various JSON formats
                                     if result_str.strip().startswith('{'):
                                         parsed = json.loads(result_str)
-                                        # Extract numeric values from common fields
+                                        # Extract values from common fields (numeric or boolean)
                                         for key in ['solution', 'result', 'value', 'answer']:
                                             if key in parsed and parsed[key] is not None:
-                                                tool_results_parsed.append(float(parsed[key]))
+                                                value = parsed[key]
+                                                # Handle boolean or numeric values
+                                                if isinstance(value, bool):
+                                                    tool_results_parsed.append("True" if value else "False")
+                                                else:
+                                                    tool_results_parsed.append(float(value))
                                                 break
                                     else:
                                         # Try to extract number directly
