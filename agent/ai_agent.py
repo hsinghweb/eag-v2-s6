@@ -40,10 +40,15 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(log_file),
+        logging.FileHandler(log_file, encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
+
+# Configure StreamHandler to use UTF-8 encoding
+for handler in logging.getLogger().handlers:
+    if isinstance(handler, logging.StreamHandler) and not isinstance(handler, logging.FileHandler):
+        handler.setStream(open(handler.stream.fileno(), mode='w', encoding='utf-8', buffering=1, closefd=False))
 logger = logging.getLogger(__name__)
 
 # Load environment variables
