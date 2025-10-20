@@ -149,6 +149,20 @@ class ThoughtType(str):
     PRIORITIZATION = "Prioritization"
 
 
+class SelfCheckPerception(BaseModel):
+    """Self-check result from Perception Layer"""
+    clarity_verified: bool = Field(..., description="Whether query clarity is verified")
+    entities_complete: bool = Field(..., description="Whether all entities are identified")
+    reasoning: str = Field(..., description="Reasoning for the self-check")
+
+
+class FallbackPerception(BaseModel):
+    """Fallback information from Perception Layer"""
+    is_uncertain: bool = Field(..., description="Whether the perception is uncertain")
+    uncertain_aspects: List[str] = Field(default_factory=list, description="Aspects that are uncertain")
+    suggested_clarification: str = Field(default="", description="Suggested clarification question for user")
+
+
 class PerceptionOutput(BaseModel):
     """Output from the Perception Layer"""
     intent: str = Field(..., description="Primary intent of the user query")
@@ -157,6 +171,8 @@ class PerceptionOutput(BaseModel):
     extracted_facts: List[str] = Field(default_factory=list, description="Facts extracted from the query")
     requires_tools: bool = Field(default=False, description="Whether the query requires tool execution")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Confidence in perception")
+    self_check: Optional[SelfCheckPerception] = Field(default=None, description="Self-verification results")
+    fallback: Optional[FallbackPerception] = Field(default=None, description="Fallback handling information")
 
 
 # 2. MEMORY LAYER MODELS
@@ -201,6 +217,28 @@ class ActionStep(BaseModel):
     reasoning: str = Field(default="", description="Reasoning behind this step")
 
 
+class FallbackStep(BaseModel):
+    """A single fallback step"""
+    condition: str = Field(..., description="When to use this fallback")
+    alternative_action: str = Field(..., description="What to do instead")
+    tool_name: Optional[str] = Field(default=None, description="Alternative tool if applicable")
+
+
+class SelfCheckDecision(BaseModel):
+    """Self-check result from Decision Layer"""
+    plan_verified: bool = Field(..., description="Whether the plan is verified")
+    tools_available: bool = Field(..., description="Whether required tools are available")
+    parameters_complete: bool = Field(..., description="Whether all parameters are complete")
+    reasoning: str = Field(..., description="Reasoning for the self-check")
+
+
+class FallbackPlan(BaseModel):
+    """Fallback plan for Decision Layer"""
+    has_fallback: bool = Field(..., description="Whether a fallback exists")
+    fallback_steps: List[FallbackStep] = Field(default_factory=list, description="Fallback steps")
+    error_handling: str = Field(default="", description="What to do if tools fail")
+
+
 class DecisionOutput(BaseModel):
     """Output from the Decision-Making Layer"""
     action_plan: List[ActionStep] = Field(..., description="Sequence of actions to take")
@@ -208,6 +246,8 @@ class DecisionOutput(BaseModel):
     expected_outcome: str = Field(default="", description="Expected outcome of the plan")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Confidence in the decision")
     should_continue: bool = Field(default=True, description="Whether to continue with more iterations")
+    self_check: Optional[SelfCheckDecision] = Field(default=None, description="Self-verification results")
+    fallback_plan: Optional[FallbackPlan] = Field(default=None, description="Fallback plan for errors")
 
 
 # 4. ACTION LAYER MODELS

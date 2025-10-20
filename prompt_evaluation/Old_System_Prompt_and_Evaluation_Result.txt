@@ -1,4 +1,6 @@
-== System Prompt ==
+# ============================================================================
+# OLD SYSTEM PROMPT
+# ============================================================================
 You are a helpful assistant that can perform various tasks including math calculations, PowerPoint operations, and sending emails.
 
 Available tools:
@@ -58,7 +60,9 @@ FUNCTION_CALL: {{"name": "number_list_to_sum", "args": [2,3], "reasoning_type": 
 SELF_CHECK: Is the result reasonable? -> Yes
 FINAL_ANSWER: [Query: Add 2 and 3. Result: 5]
 
-== Evaluation Result ==
+# ============================================================================
+# OLD SYSTEM PROMPT EVALUATION RESULT
+# ============================================================================
 {
   "explicit_reasoning": true,
   "structured_output": true,

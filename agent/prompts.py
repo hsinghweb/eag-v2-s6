@@ -22,7 +22,17 @@ Given a user query, you must output a JSON object with the following structure:
     "thought_type": "<type of cognitive process>",
     "extracted_facts": ["<fact1>", "<fact2>", ...],
     "requires_tools": true/false,
-    "confidence": <0.0 to 1.0>
+    "confidence": <0.0 to 1.0>,
+    "self_check": {{
+        "clarity_verified": true/false,
+        "entities_complete": true/false,
+        "reasoning": "<verification reasoning>"
+    }},
+    "fallback": {{
+        "is_uncertain": true/false,
+        "uncertain_aspects": ["<aspect1>", ...],
+        "suggested_clarification": "<question to ask user if uncertain>"
+    }}
 }}
 
 **Thought Types:**
@@ -52,7 +62,17 @@ User: "What is 2 + 3?"
     "thought_type": "Analysis",
     "extracted_facts": ["User wants to add 2 and 3"],
     "requires_tools": true,
-    "confidence": 1.0
+    "confidence": 1.0,
+    "self_check": {{
+        "clarity_verified": true,
+        "entities_complete": true,
+        "reasoning": "Clear arithmetic query with both operands identified"
+    }},
+    "fallback": {{
+        "is_uncertain": false,
+        "uncertain_aspects": [],
+        "suggested_clarification": ""
+    }}
 }}
 
 User: "Remind me to call Alice after the Zoom call"
@@ -62,7 +82,17 @@ User: "Remind me to call Alice after the Zoom call"
     "thought_type": "Planning",
     "extracted_facts": ["User wants to call Alice", "Call should happen after Zoom call", "This is a conditional reminder"],
     "requires_tools": true,
-    "confidence": 0.95
+    "confidence": 0.95,
+    "self_check": {{
+        "clarity_verified": true,
+        "entities_complete": false,
+        "reasoning": "Condition 'after Zoom call' lacks specific timing - may need clarification"
+    }},
+    "fallback": {{
+        "is_uncertain": true,
+        "uncertain_aspects": ["exact time of trigger"],
+        "suggested_clarification": "Should I remind you immediately after the Zoom call ends, or at a specific time?"
+    }}
 }}
 
 User: "Add 2 and 3 and show in PowerPoint"
@@ -72,7 +102,17 @@ User: "Add 2 and 3 and show in PowerPoint"
     "thought_type": "Planning",
     "extracted_facts": ["User wants to add 2 and 3", "Result should be displayed in PowerPoint", "This requires math calculation followed by PowerPoint operation"],
     "requires_tools": true,
-    "confidence": 1.0
+    "confidence": 1.0,
+    "self_check": {{
+        "clarity_verified": true,
+        "entities_complete": true,
+        "reasoning": "All entities identified: operands, operation, and output medium"
+    }},
+    "fallback": {{
+        "is_uncertain": false,
+        "uncertain_aspects": [],
+        "suggested_clarification": ""
+    }}
 }}
 
 User: "If it's sunny tomorrow, schedule tennis at 5"
@@ -82,7 +122,17 @@ User: "If it's sunny tomorrow, schedule tennis at 5"
     "thought_type": "Decision Making",
     "extracted_facts": ["User wants to schedule tennis", "Scheduling is conditional on weather", "Time is 5 PM", "Check should happen tomorrow"],
     "requires_tools": true,
-    "confidence": 0.9
+    "confidence": 0.9,
+    "self_check": {{
+        "clarity_verified": true,
+        "entities_complete": true,
+        "reasoning": "Conditional action with clear trigger and time"
+    }},
+    "fallback": {{
+        "is_uncertain": false,
+        "uncertain_aspects": [],
+        "suggested_clarification": ""
+    }}
 }}
 
 Now analyze the following user query and respond ONLY with the JSON object (no additional text):
@@ -121,7 +171,24 @@ Your job is to output a JSON object with this structure:
     "reasoning": "<overall reasoning for this plan>",
     "expected_outcome": "<what should happen>",
     "confidence": <0.0 to 1.0>,
-    "should_continue": true/false
+    "should_continue": true/false,
+    "self_check": {{
+        "plan_verified": true/false,
+        "tools_available": true/false,
+        "parameters_complete": true/false,
+        "reasoning": "<verification reasoning>"
+    }},
+    "fallback_plan": {{
+        "has_fallback": true/false,
+        "fallback_steps": [
+            {{
+                "condition": "<when to use this fallback>",
+                "alternative_action": "<what to do instead>",
+                "tool_name": "<alternative tool if applicable>"
+            }}
+        ],
+        "error_handling": "<what to do if tools fail>"
+    }}
 }}
 
 **Action Types:**
@@ -211,7 +278,18 @@ Query: "A circle has radius 5. What is its area?"
     "reasoning": "Geometry word problem requiring circle area calculation",
     "expected_outcome": "User receives area of circle with radius 5",
     "confidence": 1.0,
-    "should_continue": false
+    "should_continue": false,
+    "self_check": {{
+        "plan_verified": true,
+        "tools_available": true,
+        "parameters_complete": true,
+        "reasoning": "Tool t_circle_area is available, radius parameter extracted correctly"
+    }},
+    "fallback_plan": {{
+        "has_fallback": false,
+        "fallback_steps": [],
+        "error_handling": "If tool fails, inform user to retry with valid radius value"
+    }}
 }}
 
 Query: "In a circle with radius 10 cm, find the length of a chord 6 cm from the center"
@@ -237,7 +315,24 @@ Query: "In a circle with radius 10 cm, find the length of a chord 6 cm from the 
     "reasoning": "Geometry chord problem: use t_chord_length for direct calculation",
     "expected_outcome": "User receives chord length of 16 cm",
     "confidence": 1.0,
-    "should_continue": false
+    "should_continue": false,
+    "self_check": {{
+        "plan_verified": true,
+        "tools_available": true,
+        "parameters_complete": true,
+        "reasoning": "Tool t_chord_length exists and both radius and distance parameters provided"
+    }},
+    "fallback_plan": {{
+        "has_fallback": true,
+        "fallback_steps": [
+            {{
+                "condition": "If t_chord_length is not available",
+                "alternative_action": "Use t_pythagorean with half-chord as unknown leg",
+                "tool_name": "t_pythagorean_leg"
+            }}
+        ],
+        "error_handling": "If calculation fails, verify distance is less than radius"
+    }}
 }}
 
 Query: "Find the average of 10, 20, 30, 40, 50"
@@ -263,7 +358,24 @@ Query: "Find the average of 10, 20, 30, 40, 50"
     "reasoning": "Statistics word problem requiring mean calculation",
     "expected_outcome": "User receives the average (mean) of the numbers",
     "confidence": 1.0,
-    "should_continue": false
+    "should_continue": false,
+    "self_check": {{
+        "plan_verified": true,
+        "tools_available": true,
+        "parameters_complete": true,
+        "reasoning": "Tool t_mean is available and all numbers are provided in list format"
+    }},
+    "fallback_plan": {{
+        "has_fallback": true,
+        "fallback_steps": [
+            {{
+                "condition": "If t_mean is not available",
+                "alternative_action": "Use t_add to sum all numbers, then divide by count",
+                "tool_name": "t_add, t_division"
+            }}
+        ],
+        "error_handling": "If tool fails, verify numbers list is not empty"
+    }}
 }}
 
 Query: "Solve the equation x + 4 = 5"
@@ -289,7 +401,24 @@ Query: "Solve the equation x + 4 = 5"
     "reasoning": "Linear equation word problem using equation string format",
     "expected_outcome": "User receives x = 1",
     "confidence": 1.0,
-    "should_continue": false
+    "should_continue": false,
+    "self_check": {{
+        "plan_verified": true,
+        "tools_available": true,
+        "parameters_complete": true,
+        "reasoning": "Tool t_solve_linear accepts equation_string parameter"
+    }},
+    "fallback_plan": {{
+        "has_fallback": true,
+        "fallback_steps": [
+            {{
+                "condition": "If equation_string parsing fails",
+                "alternative_action": "Manually parse coefficients and use a, b parameters",
+                "tool_name": "t_solve_linear"
+            }}
+        ],
+        "error_handling": "If parsing fails, inform user equation must be in format 'ax + b = 0'"
+    }}
 }}
 
 Query: "Two consecutive numbers sum to 41. What are they?"
@@ -323,7 +452,24 @@ Query: "Two consecutive numbers sum to 41. What are they?"
     "reasoning": "Multi-value problem: need to calculate and return both consecutive numbers",
     "expected_outcome": "User receives both numbers: 20 and 21",
     "confidence": 1.0,
-    "should_continue": false
+    "should_continue": false,
+    "self_check": {{
+        "plan_verified": true,
+        "tools_available": true,
+        "parameters_complete": true,
+        "reasoning": "Multi-step plan with result chaining verified; t_solve_linear and t_add both available"
+    }},
+    "fallback_plan": {{
+        "has_fallback": true,
+        "fallback_steps": [
+            {{
+                "condition": "If result chaining fails",
+                "alternative_action": "Solve equation manually: (41-1)/2 = 20, then add 1",
+                "tool_name": "t_subtract, t_division, t_add"
+            }}
+        ],
+        "error_handling": "If any step fails, recalculate from equation x + (x+1) = 41"
+    }}
 }}
 
 Query: "Evaluate true AND false and send result to email"
@@ -357,7 +503,24 @@ Query: "Evaluate true AND false and send result to email"
     "reasoning": "Logical evaluation with email delivery using result chaining",
     "expected_outcome": "User receives false (AND of true and false), sent via email",
     "confidence": 1.0,
-    "should_continue": false
+    "should_continue": false,
+    "self_check": {{
+        "plan_verified": true,
+        "tools_available": true,
+        "parameters_complete": true,
+        "reasoning": "Both t_logical_and and send_gmail are available; result chaining configured"
+    }},
+    "fallback_plan": {{
+        "has_fallback": true,
+        "fallback_steps": [
+            {{
+                "condition": "If send_gmail fails",
+                "alternative_action": "Display result directly to user instead of emailing",
+                "tool_name": "response"
+            }}
+        ],
+        "error_handling": "If email fails, inform user of result and email delivery issue"
+    }}
 }}
 
 **Important:** All tool parameters must be wrapped in an "input" object. For example:
