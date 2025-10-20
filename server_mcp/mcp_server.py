@@ -79,6 +79,8 @@ from server_mcp.tools_algebra import (
     find_arithmetic_sequence_term,
     find_geometric_sequence_term,
     simplify_ratio,
+    parse_linear_equation,
+    parse_quadratic_equation,
 )
 
 # Import geometry tools
@@ -857,17 +859,44 @@ def t_complex_expression(input: LogicalExpressionInput) -> BooleanOutput:
 
 @mcp.tool()
 def t_solve_linear(input: LinearEquationInput) -> LinearEquationOutput:
-    """Solve linear equation ax + b = 0"""
-    logger.info(f"Calling t_solve_linear({input.a}x + {input.b} = 0)")
-    solution = solve_linear_equation(input.a, input.b)
+    """Solve linear equation ax + b = 0 or from equation string like 'x + 4 = 5'"""
+    # Check if equation_string is provided
+    if input.equation_string:
+        logger.info(f"Calling t_solve_linear with equation string: {input.equation_string}")
+        try:
+            a, b = parse_linear_equation(input.equation_string)
+            logger.info(f"Parsed to: {a}x + {b} = 0")
+        except Exception as e:
+            logger.error(f"Failed to parse equation string: {e}")
+            return LinearEquationOutput(solution=None)
+    else:
+        a = input.a
+        b = input.b
+        logger.info(f"Calling t_solve_linear({a}x + {b} = 0)")
+    
+    solution = solve_linear_equation(a, b)
     return LinearEquationOutput(solution=solution)
 
 
 @mcp.tool()
 def t_solve_quadratic(input: QuadraticEquationInput) -> QuadraticEquationOutput:
-    """Solve quadratic equation ax² + bx + c = 0"""
-    logger.info(f"Calling t_solve_quadratic({input.a}x² + {input.b}x + {input.c} = 0)")
-    solutions = solve_quadratic_equation(input.a, input.b, input.c)
+    """Solve quadratic equation ax² + bx + c = 0 or from equation string like 'x^2 - 5x + 6 = 0'"""
+    # Check if equation_string is provided
+    if input.equation_string:
+        logger.info(f"Calling t_solve_quadratic with equation string: {input.equation_string}")
+        try:
+            a, b, c = parse_quadratic_equation(input.equation_string)
+            logger.info(f"Parsed to: {a}x² + {b}x + {c} = 0")
+        except Exception as e:
+            logger.error(f"Failed to parse equation string: {e}")
+            return QuadraticEquationOutput(solutions=[])
+    else:
+        a = input.a
+        b = input.b
+        c = input.c
+        logger.info(f"Calling t_solve_quadratic({a}x² + {b}x + {c} = 0)")
+    
+    solutions = solve_quadratic_equation(a, b, c)
     return QuadraticEquationOutput(solutions=solutions)
 
 

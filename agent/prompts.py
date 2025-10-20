@@ -227,11 +227,42 @@ Query: "Find the average of 10, 20, 30, 40, 50"
     "should_continue": false
 }}
 
+Query: "Solve the equation x + 4 = 5"
+{{
+    "action_plan": [
+        {{
+            "step_number": 1,
+            "action_type": "tool_call",
+            "description": "Solve linear equation x + 4 = 5",
+            "tool_name": "t_solve_linear",
+            "parameters": {{"input": {{"equation_string": "x + 4 = 5"}}}},
+            "reasoning": "Algebra problem: solve linear equation using equation string"
+        }},
+        {{
+            "step_number": 2,
+            "action_type": "response",
+            "description": "Return the solution",
+            "tool_name": null,
+            "parameters": {{}},
+            "reasoning": "Equation solved"
+        }}
+    ],
+    "reasoning": "Linear equation word problem using equation string format",
+    "expected_outcome": "User receives x = 1",
+    "confidence": 1.0,
+    "should_continue": false
+}}
+
 **Important:** All tool parameters must be wrapped in an "input" object. For example:
 - t_number_list_to_sum: {{"input": {{"numbers": [1, 2, 3]}}}}
 - t_calculate_difference: {{"input": {{"a": 300, "b": 50}}}}
 - send_gmail: {{"input": {{"content": "email text"}}}}
 - draw_rectangle: {{"input": {{"x1": 1, "y1": 1, "x2": 8, "y2": 6}}}}
+
+**Algebra Tools - Equation Strings:**
+Algebra equation tools accept equation strings for convenience:
+- t_solve_linear: {{"input": {{"equation_string": "x + 4 = 5"}}}} or {{"input": {{"a": 1, "b": -1}}}}
+- t_solve_quadratic: {{"input": {{"equation_string": "x^2 - 5x + 6 = 0"}}}} or {{"input": {{"a": 1, "b": -5, "c": 6}}}}
 
 Now create an action plan for the given information and respond ONLY with the JSON object:
 """

@@ -287,8 +287,22 @@ class IntOutput(BaseModel):
 
 class LinearEquationInput(BaseModel):
     """Input model for linear equation: ax + b = 0"""
-    a: float = Field(..., description="Coefficient a")
-    b: float = Field(..., description="Constant b")
+    a: Optional[float] = Field(None, description="Coefficient a")
+    b: Optional[float] = Field(None, description="Constant b")
+    equation_string: Optional[str] = Field(None, description="Equation string like 'x + 4 = 5' or '2x - 6 = 0'")
+    
+    @validator('equation_string', always=True)
+    def validate_input(cls, v, values):
+        a = values.get('a')
+        b = values.get('b')
+        
+        # Must provide either (a, b) OR equation_string
+        if (a is None or b is None) and v is None:
+            raise ValueError('Must provide either (a, b) coefficients or equation_string')
+        if (a is not None and b is not None) and v is not None:
+            raise ValueError('Cannot provide both coefficients and equation_string')
+        
+        return v
 
 
 class LinearEquationOutput(BaseModel):
@@ -298,9 +312,24 @@ class LinearEquationOutput(BaseModel):
 
 class QuadraticEquationInput(BaseModel):
     """Input model for quadratic equation: ax² + bx + c = 0"""
-    a: float = Field(..., description="Coefficient a (x² term)")
-    b: float = Field(..., description="Coefficient b (x term)")
-    c: float = Field(..., description="Constant c")
+    a: Optional[float] = Field(None, description="Coefficient a (x² term)")
+    b: Optional[float] = Field(None, description="Coefficient b (x term)")
+    c: Optional[float] = Field(None, description="Constant c")
+    equation_string: Optional[str] = Field(None, description="Equation string like 'x^2 - 5x + 6 = 0' or '2x^2 + 3x - 2 = 0'")
+    
+    @validator('equation_string', always=True)
+    def validate_input(cls, v, values):
+        a = values.get('a')
+        b = values.get('b')
+        c = values.get('c')
+        
+        # Must provide either (a, b, c) OR equation_string
+        if (a is None or b is None or c is None) and v is None:
+            raise ValueError('Must provide either (a, b, c) coefficients or equation_string')
+        if (a is not None and b is not None and c is not None) and v is not None:
+            raise ValueError('Cannot provide both coefficients and equation_string')
+        
+        return v
 
 
 class QuadraticEquationOutput(BaseModel):

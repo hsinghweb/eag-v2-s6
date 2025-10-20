@@ -4,6 +4,7 @@ Tools for solving equations, simplifying expressions, and algebraic operations
 """
 import logging
 import math
+import re
 from typing import List, Tuple, Optional
 
 def log_function(func):
@@ -13,6 +14,134 @@ def log_function(func):
         logging.info(f"{func.__name__} returned: {result}")
         return result
     return wrapper
+
+
+def parse_linear_equation(equation_string: str) -> Tuple[float, float]:
+    """
+    Parse a linear equation string like "2x + 5 = 0" or "x + 4 = 5" into coefficients.
+    
+    Args:
+        equation_string: String representation of equation
+        
+    Returns:
+        Tuple of (a, b) where equation is ax + b = 0
+    """
+    # Remove spaces
+    eq = equation_string.replace(" ", "").lower()
+    
+    # Split by equals sign
+    if "=" not in eq:
+        raise ValueError("Equation must contain '=' sign")
+    
+    left, right = eq.split("=")
+    
+    # Parse right side
+    try:
+        right_val = float(right)
+    except ValueError:
+        raise ValueError("Right side of equation must be a number")
+    
+    # Parse left side for ax + b form
+    # Handle patterns like: 2x+5, x+5, -x+5, 2x-5, etc.
+    
+    # Initialize coefficients
+    a = 0  # coefficient of x
+    b = 0  # constant term
+    
+    # Find x coefficient
+    x_match = re.search(r'([+-]?\d*\.?\d*)x', left)
+    if x_match:
+        coef = x_match.group(1)
+        if coef in ['', '+']:
+            a = 1
+        elif coef == '-':
+            a = -1
+        else:
+            a = float(coef)
+    
+    # Find constant term (number not attached to x)
+    # Remove the x term first
+    left_without_x = re.sub(r'[+-]?\d*\.?\d*x', '', left)
+    if left_without_x:
+        # Handle remaining constants
+        const_match = re.search(r'([+-]?\d+\.?\d*)', left_without_x)
+        if const_match:
+            b = float(const_match.group(1))
+    
+    # Adjust for equation form: ax + b = c becomes ax + (b-c) = 0
+    b = b - right_val
+    
+    return (a, b)
+
+
+def parse_quadratic_equation(equation_string: str) -> Tuple[float, float, float]:
+    """
+    Parse a quadratic equation string like "x^2 - 5x + 6 = 0" into coefficients.
+    
+    Args:
+        equation_string: String representation of equation
+        
+    Returns:
+        Tuple of (a, b, c) where equation is ax² + bx + c = 0
+    """
+    # Remove spaces
+    eq = equation_string.replace(" ", "").lower()
+    eq = eq.replace("^", "**")  # Handle both ^ and **
+    
+    # Split by equals sign
+    if "=" not in eq:
+        raise ValueError("Equation must contain '=' sign")
+    
+    left, right = eq.split("=")
+    
+    # Parse right side
+    try:
+        right_val = float(right)
+    except ValueError:
+        raise ValueError("Right side of equation must be a number")
+    
+    # Initialize coefficients
+    a = 0  # coefficient of x²
+    b = 0  # coefficient of x
+    c = 0  # constant term
+    
+    # Find x² coefficient
+    x2_patterns = [r'([+-]?\d*\.?\d*)x\*\*2', r'([+-]?\d*\.?\d*)x2', r'([+-]?\d*\.?\d*)x²']
+    for pattern in x2_patterns:
+        x2_match = re.search(pattern, left)
+        if x2_match:
+            coef = x2_match.group(1)
+            if coef in ['', '+']:
+                a = 1
+            elif coef == '-':
+                a = -1
+            else:
+                a = float(coef)
+            break
+    
+    # Find x coefficient (not x²)
+    left_temp = re.sub(r'[+-]?\d*\.?\d*x(\*\*2|2|²)', '', left)  # Remove x² terms
+    x_match = re.search(r'([+-]?\d*\.?\d*)x', left_temp)
+    if x_match:
+        coef = x_match.group(1)
+        if coef in ['', '+']:
+            b = 1
+        elif coef == '-':
+            b = -1
+        else:
+            b = float(coef)
+    
+    # Find constant term
+    left_temp = re.sub(r'[+-]?\d*\.?\d*x(\*\*2|2|²)?', '', left)
+    if left_temp:
+        const_match = re.search(r'([+-]?\d+\.?\d*)', left_temp)
+        if const_match:
+            c = float(const_match.group(1))
+    
+    # Adjust for equation form
+    c = c - right_val
+    
+    return (a, b, c)
 
 
 @log_function
