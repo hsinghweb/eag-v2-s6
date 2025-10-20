@@ -7,7 +7,6 @@ It translates raw user input into structured information using an LLM.
 import logging
 import json
 import google.generativeai as genai
-from typing import Optional
 from .models import PerceptionOutput
 from .prompts import PERCEPTION_PROMPT
 
@@ -33,7 +32,7 @@ class PerceptionLayer:
         self.user_preferences = user_preferences or {}
         logger.info("Perception Layer initialized")
     
-    async def perceive(self, query: str) -> PerceptionOutput:
+    def perceive(self, query: str) -> PerceptionOutput:
         """
         Analyze user query and extract structured information.
         

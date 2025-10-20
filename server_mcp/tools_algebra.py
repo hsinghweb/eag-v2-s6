@@ -74,6 +74,44 @@ def parse_linear_equation(equation_string: str) -> Tuple[float, float]:
     return (a, b)
 
 
+def _parse_coefficient(coef: str) -> float:
+    """Parse coefficient string to float value."""
+    if coef in ['', '+']:
+        return 1
+    elif coef == '-':
+        return -1
+    return float(coef)
+
+
+def _extract_x2_coefficient(left: str) -> float:
+    """Extract x² coefficient from equation left side."""
+    x2_patterns = [r'([+-]?\d*\.?\d*)x\*\*2', r'([+-]?\d*\.?\d*)x2', r'([+-]?\d*\.?\d*)x²']
+    for pattern in x2_patterns:
+        x2_match = re.search(pattern, left)
+        if x2_match:
+            return _parse_coefficient(x2_match.group(1))
+    return 0
+
+
+def _extract_x_coefficient(left: str) -> float:
+    """Extract x coefficient (not x²) from equation left side."""
+    left_temp = re.sub(r'[+-]?\d*\.?\d*x(\*\*2|2|²)', '', left)
+    x_match = re.search(r'([+-]?\d*\.?\d*)x', left_temp)
+    if x_match:
+        return _parse_coefficient(x_match.group(1))
+    return 0
+
+
+def _extract_constant(left: str) -> float:
+    """Extract constant term from equation left side."""
+    left_temp = re.sub(r'[+-]?\d*\.?\d*x(\*\*2|2|²)?', '', left)
+    if left_temp:
+        const_match = re.search(r'([+-]?\d+\.?\d*)', left_temp)
+        if const_match:
+            return float(const_match.group(1))
+    return 0
+
+
 def parse_quadratic_equation(equation_string: str) -> Tuple[float, float, float]:
     """
     Parse a quadratic equation string like "x^2 - 5x + 6 = 0" into coefficients.
@@ -84,62 +122,21 @@ def parse_quadratic_equation(equation_string: str) -> Tuple[float, float, float]
     Returns:
         Tuple of (a, b, c) where equation is ax² + bx + c = 0
     """
-    # Remove spaces
-    eq = equation_string.replace(" ", "").lower()
-    eq = eq.replace("^", "**")  # Handle both ^ and **
+    eq = equation_string.replace(" ", "").lower().replace("^", "**")
     
-    # Split by equals sign
     if "=" not in eq:
         raise ValueError("Equation must contain '=' sign")
     
     left, right = eq.split("=")
     
-    # Parse right side
     try:
         right_val = float(right)
     except ValueError:
         raise ValueError("Right side of equation must be a number")
     
-    # Initialize coefficients
-    a = 0  # coefficient of x²
-    b = 0  # coefficient of x
-    c = 0  # constant term
-    
-    # Find x² coefficient
-    x2_patterns = [r'([+-]?\d*\.?\d*)x\*\*2', r'([+-]?\d*\.?\d*)x2', r'([+-]?\d*\.?\d*)x²']
-    for pattern in x2_patterns:
-        x2_match = re.search(pattern, left)
-        if x2_match:
-            coef = x2_match.group(1)
-            if coef in ['', '+']:
-                a = 1
-            elif coef == '-':
-                a = -1
-            else:
-                a = float(coef)
-            break
-    
-    # Find x coefficient (not x²)
-    left_temp = re.sub(r'[+-]?\d*\.?\d*x(\*\*2|2|²)', '', left)  # Remove x² terms
-    x_match = re.search(r'([+-]?\d*\.?\d*)x', left_temp)
-    if x_match:
-        coef = x_match.group(1)
-        if coef in ['', '+']:
-            b = 1
-        elif coef == '-':
-            b = -1
-        else:
-            b = float(coef)
-    
-    # Find constant term
-    left_temp = re.sub(r'[+-]?\d*\.?\d*x(\*\*2|2|²)?', '', left)
-    if left_temp:
-        const_match = re.search(r'([+-]?\d+\.?\d*)', left_temp)
-        if const_match:
-            c = float(const_match.group(1))
-    
-    # Adjust for equation form
-    c = c - right_val
+    a = _extract_x2_coefficient(left)
+    b = _extract_x_coefficient(left)
+    c = _extract_constant(left) - right_val
     
     return (a, b, c)
 

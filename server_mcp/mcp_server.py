@@ -5,11 +5,8 @@ from pathlib import Path
 # Add parent directory to path to allow imports when run directly
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from mcp.server.fastmcp import FastMCP, Image
-from mcp.server.fastmcp.prompts import base
+from mcp.server.fastmcp import FastMCP
 from mcp.types import TextContent
-from PIL import Image as PILImage
-import math
 from pptx import Presentation
 from pptx.util import Inches
 from pptx.dml.color import RGBColor
@@ -129,10 +126,9 @@ from server_mcp.tools_statistics import (
     calculate_probability_complement,
 )
 from server_mcp.models import (
-    DrawRectangleInput, DrawRectangleOutput,
-    AddTextInput, AddTextOutput,
-    PowerPointOperationOutput,
-    SendGmailInput, SendGmailOutput,
+    DrawRectangleInput,
+    AddTextInput,
+    SendGmailInput,
     NumberListInput, NumberListOutput,
     TwoNumberInput, TwoNumberOutput,
     SingleNumberInput, SingleNumberOutput,
@@ -921,7 +917,7 @@ def t_evaluate_polynomial(input: PolynomialInput) -> TwoNumberOutput:
 @mcp.tool()
 def t_solve_system_2x2(input: System2x2Input) -> System2x2Output:
     """Solve 2x2 system of linear equations"""
-    logger.info(f"Calling t_solve_system_2x2")
+    logger.info("Calling t_solve_system_2x2")
     solution = solve_system_2x2(input.a1, input.b1, input.c1, input.a2, input.b2, input.c2)
     if solution:
         return System2x2Output(x=solution[0], y=solution[1], has_solution=True)
@@ -955,7 +951,7 @@ def t_binomial_expansion(input: BinomialExpansionInput) -> FloatListOutput:
 @mcp.tool()
 def t_arithmetic_sum(input: ArithmeticSequenceInput) -> TwoNumberOutput:
     """Calculate sum of arithmetic sequence"""
-    logger.info(f"Calling t_arithmetic_sum")
+    logger.info("Calling t_arithmetic_sum")
     result = calculate_arithmetic_sequence_sum(input.first, input.common_diff, input.n)
     return TwoNumberOutput(result=result)
 
@@ -963,7 +959,7 @@ def t_arithmetic_sum(input: ArithmeticSequenceInput) -> TwoNumberOutput:
 @mcp.tool()
 def t_geometric_sum(input: GeometricSequenceInput) -> TwoNumberOutput:
     """Calculate sum of geometric sequence"""
-    logger.info(f"Calling t_geometric_sum")
+    logger.info("Calling t_geometric_sum")
     result = calculate_geometric_sequence_sum(input.first, input.ratio, input.n)
     return TwoNumberOutput(result=result)
 
@@ -971,7 +967,7 @@ def t_geometric_sum(input: GeometricSequenceInput) -> TwoNumberOutput:
 @mcp.tool()
 def t_arithmetic_term(input: ArithmeticSequenceInput) -> TwoNumberOutput:
     """Find nth term of arithmetic sequence"""
-    logger.info(f"Calling t_arithmetic_term")
+    logger.info("Calling t_arithmetic_term")
     result = find_arithmetic_sequence_term(input.first, input.common_diff, input.n)
     return TwoNumberOutput(result=result)
 
@@ -979,7 +975,7 @@ def t_arithmetic_term(input: ArithmeticSequenceInput) -> TwoNumberOutput:
 @mcp.tool()
 def t_geometric_term(input: GeometricSequenceInput) -> TwoNumberOutput:
     """Find nth term of geometric sequence"""
-    logger.info(f"Calling t_geometric_term")
+    logger.info("Calling t_geometric_term")
     result = find_geometric_sequence_term(input.first, input.ratio, input.n)
     return TwoNumberOutput(result=result)
 
@@ -1111,7 +1107,7 @@ def t_prism_volume(input: RectangularPrismInput) -> TwoNumberOutput:
 @mcp.tool()
 def t_distance_2d(input: Point2DInput) -> TwoNumberOutput:
     """Calculate distance between two 2D points"""
-    logger.info(f"Calling t_distance_2d")
+    logger.info("Calling t_distance_2d")
     result = calculate_distance_2d(input.x1, input.y1, input.x2, input.y2)
     return TwoNumberOutput(result=result)
 
@@ -1119,7 +1115,7 @@ def t_distance_2d(input: Point2DInput) -> TwoNumberOutput:
 @mcp.tool()
 def t_distance_3d(input: Point3DInput) -> TwoNumberOutput:
     """Calculate distance between two 3D points"""
-    logger.info(f"Calling t_distance_3d")
+    logger.info("Calling t_distance_3d")
     result = calculate_distance_3d(input.x1, input.y1, input.z1, input.x2, input.y2, input.z2)
     return TwoNumberOutput(result=result)
 
@@ -1151,7 +1147,7 @@ def t_chord_length(input: ChordInput) -> TwoNumberOutput:
 @mcp.tool()
 def t_trapezoid_area(input: TrapezoidInput) -> TwoNumberOutput:
     """Calculate area of a trapezoid"""
-    logger.info(f"Calling t_trapezoid_area")
+    logger.info("Calling t_trapezoid_area")
     result = calculate_trapezoid_area(input.base1, input.base2, input.height)
     return TwoNumberOutput(result=result)
 
@@ -1227,7 +1223,7 @@ def t_percentile(input: PercentileInput) -> TwoNumberOutput:
 @mcp.tool()
 def t_quartiles(input: StatNumberListInput) -> QuartilesOutput:
     """Calculate quartiles (Q1, Q2, Q3)"""
-    logger.info(f"Calling t_quartiles")
+    logger.info("Calling t_quartiles")
     q1, q2, q3 = calculate_quartiles(input.numbers)
     return QuartilesOutput(q1=q1, q2=q2, q3=q3)
 
@@ -1235,7 +1231,7 @@ def t_quartiles(input: StatNumberListInput) -> QuartilesOutput:
 @mcp.tool()
 def t_iqr(input: StatNumberListInput) -> TwoNumberOutput:
     """Calculate interquartile range (IQR)"""
-    logger.info(f"Calling t_iqr")
+    logger.info("Calling t_iqr")
     result = calculate_interquartile_range(input.numbers)
     return TwoNumberOutput(result=result)
 
@@ -1251,7 +1247,7 @@ def t_z_score(input: ZScoreInput) -> TwoNumberOutput:
 @mcp.tool()
 def t_correlation(input: CorrelationInput) -> TwoNumberOutput:
     """Calculate Pearson correlation coefficient"""
-    logger.info(f"Calling t_correlation")
+    logger.info("Calling t_correlation")
     result = calculate_correlation_coefficient(input.x_values, input.y_values)
     return TwoNumberOutput(result=result)
 
@@ -1259,7 +1255,7 @@ def t_correlation(input: CorrelationInput) -> TwoNumberOutput:
 @mcp.tool()
 def t_linear_regression(input: CorrelationInput) -> RegressionOutput:
     """Calculate linear regression (y = mx + b)"""
-    logger.info(f"Calling t_linear_regression")
+    logger.info("Calling t_linear_regression")
     slope, intercept = calculate_linear_regression(input.x_values, input.y_values)
     return RegressionOutput(slope=slope, intercept=intercept)
 
@@ -1283,7 +1279,7 @@ def t_combinations_stat(input: CombinationInput) -> IntOutput:
 @mcp.tool()
 def t_probability_union(input: ProbabilityUnionInput) -> TwoNumberOutput:
     """Calculate probability union P(A ∪ B)"""
-    logger.info(f"Calling t_probability_union")
+    logger.info("Calling t_probability_union")
     result = calculate_probability_union(input.p_a, input.p_b, input.p_both)
     return TwoNumberOutput(result=result)
 
@@ -1291,7 +1287,7 @@ def t_probability_union(input: ProbabilityUnionInput) -> TwoNumberOutput:
 @mcp.tool()
 def t_probability_complement(input: ProbabilityInput) -> TwoNumberOutput:
     """Calculate probability complement P(A')"""
-    logger.info(f"Calling t_probability_complement")
+    logger.info("Calling t_probability_complement")
     result = calculate_probability_complement(input.p)
     return TwoNumberOutput(result=result)
 

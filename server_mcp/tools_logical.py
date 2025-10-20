@@ -5,6 +5,11 @@ Tools for logical operations, boolean logic, truth tables, and reasoning
 import logging
 from typing import List, Dict
 
+# Constants for logical operators
+OP_AND = " and "
+OP_OR = " or "
+OP_NOT = " not "
+
 def log_function(func):
     def wrapper(*args, **kwargs):
         logging.info(f"Calling {func.__name__} with args: {args} {kwargs}")
@@ -109,12 +114,12 @@ def evaluate_complex_expression(expression: str, variables: Dict[str, bool]) -> 
         expr = expr.replace(var, str(val))
     
     # Replace logical operators with Python operators
-    expr = expr.replace(" and ", " and ")
-    expr = expr.replace(" or ", " or ")
-    expr = expr.replace(" not ", " not ")
-    expr = expr.replace("&", " and ")
-    expr = expr.replace("|", " or ")
-    expr = expr.replace("~", " not ")
+    expr = expr.replace(OP_AND, OP_AND)
+    expr = expr.replace(OP_OR, OP_OR)
+    expr = expr.replace(OP_NOT, OP_NOT)
+    expr = expr.replace("&", OP_AND)
+    expr = expr.replace("|", OP_OR)
+    expr = expr.replace("~", OP_NOT)
     
     try:
         return eval(expr)

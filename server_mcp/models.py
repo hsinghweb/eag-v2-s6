@@ -2,7 +2,11 @@
 Pydantic models for input and output validation of MCP tools.
 """
 from pydantic import BaseModel, Field, validator
-from typing import List, Optional, Tuple, Dict
+from typing import List, Optional, Dict
+
+# Constants for common field descriptions
+LIST_OF_NUMBERS_DESC = "List of numbers"
+FIRST_TERM_DESC = "First term"
 
 
 # PowerPoint Tool Models
@@ -65,7 +69,7 @@ class SendGmailOutput(BaseModel):
 # Math Tool Models
 class NumberListInput(BaseModel):
     """Input model for list-based math operations"""
-    numbers: List[float] = Field(..., min_items=1, description="List of numbers")
+    numbers: List[float] = Field(..., min_items=1, description=LIST_OF_NUMBERS_DESC)
 
 
 class NumberListOutput(BaseModel):
@@ -374,7 +378,7 @@ class RootInput(BaseModel):
 
 class BinomialExpansionInput(BaseModel):
     """Input model for binomial expansion"""
-    a: float = Field(..., description="First term")
+    a: float = Field(..., description=FIRST_TERM_DESC)
     b: float = Field(..., description="Second term")
     n: int = Field(..., ge=0, description="Power")
 
@@ -386,21 +390,21 @@ class FloatListOutput(BaseModel):
 
 class ArithmeticSequenceInput(BaseModel):
     """Input model for arithmetic sequence"""
-    first: float = Field(..., description="First term")
+    first: float = Field(..., description=FIRST_TERM_DESC)
     common_diff: float = Field(..., description="Common difference")
     n: int = Field(..., ge=1, description="Term number or count")
 
 
 class GeometricSequenceInput(BaseModel):
     """Input model for geometric sequence"""
-    first: float = Field(..., description="First term")
+    first: float = Field(..., description=FIRST_TERM_DESC)
     ratio: float = Field(..., description="Common ratio")
     n: int = Field(..., ge=1, description="Term number or count")
 
 
 class RatioInput(BaseModel):
     """Input model for ratio simplification"""
-    a: float = Field(..., description="First term")
+    a: float = Field(..., description=FIRST_TERM_DESC)
     b: float = Field(..., ne=0, description="Second term (non-zero)")
 
 
@@ -505,7 +509,7 @@ class TrapezoidInput(BaseModel):
 
 class StatNumberListInput(BaseModel):
     """Input model for statistical operations on number lists"""
-    numbers: List[float] = Field(..., min_items=1, description="List of numbers")
+    numbers: List[float] = Field(..., min_items=1, description=LIST_OF_NUMBERS_DESC)
 
 
 class StatFloatListOutput(BaseModel):
@@ -515,13 +519,13 @@ class StatFloatListOutput(BaseModel):
 
 class VarianceInput(BaseModel):
     """Input model for variance calculation"""
-    numbers: List[float] = Field(..., min_items=1, description="List of numbers")
+    numbers: List[float] = Field(..., min_items=1, description=LIST_OF_NUMBERS_DESC)
     sample: bool = Field(default=True, description="Calculate sample variance (True) or population variance (False)")
 
 
 class PercentileInput(BaseModel):
     """Input model for percentile calculation"""
-    numbers: List[float] = Field(..., min_items=1, description="List of numbers")
+    numbers: List[float] = Field(..., min_items=1, description=LIST_OF_NUMBERS_DESC)
     percentile: float = Field(..., ge=0, le=100, description="Percentile to calculate (0-100)")
 
 

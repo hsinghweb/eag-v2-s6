@@ -56,9 +56,9 @@ class ActionLayer:
             if action_step.action_type == "tool_call":
                 result = await self._execute_tool_call(action_step)
             elif action_step.action_type == "response":
-                result = await self._generate_response(action_step)
+                result = self._generate_response(action_step)
             elif action_step.action_type == "query_memory":
-                result = await self._query_memory(action_step)
+                result = self._query_memory(action_step)
             else:
                 raise ValueError(f"Unknown action type: {action_step.action_type}")
             
@@ -123,7 +123,7 @@ class ActionLayer:
             facts_to_remember=facts_to_remember
         )
     
-    async def _generate_response(self, action_step: ActionStep) -> ActionResult:
+    def _generate_response(self, action_step: ActionStep) -> ActionResult:
         """
         Generate a text response.
         
@@ -145,12 +145,12 @@ class ActionLayer:
             facts_to_remember=[f"Generated response: {message}"]
         )
     
-    async def _query_memory(self, action_step: ActionStep) -> ActionResult:
+    def _query_memory(self, _action_step: ActionStep) -> ActionResult:
         """
         Query memory (placeholder for future implementation).
         
         Args:
-            action_step: Action step with memory query
+            _action_step: Action step with memory query
             
         Returns:
             ActionResult with memory query result

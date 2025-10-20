@@ -4,7 +4,10 @@ Tools for calculating areas, perimeters, volumes, and other geometric properties
 """
 import logging
 import math
-from typing import Tuple
+
+# Error message constants
+ERR_RADIUS_NEGATIVE = "Radius cannot be negative"
+ERR_DIMENSIONS_NEGATIVE = "Dimensions cannot be negative"
 
 def log_function(func):
     def wrapper(*args, **kwargs):
@@ -21,7 +24,7 @@ def calculate_circle_area(radius: float) -> float:
     Calculate area of a circle: π * r²
     """
     if radius < 0:
-        raise ValueError("Radius cannot be negative")
+        raise ValueError(ERR_RADIUS_NEGATIVE)
     return math.pi * radius ** 2
 
 
@@ -31,7 +34,7 @@ def calculate_circle_circumference(radius: float) -> float:
     Calculate circumference of a circle: 2 * π * r
     """
     if radius < 0:
-        raise ValueError("Radius cannot be negative")
+        raise ValueError(ERR_RADIUS_NEGATIVE)
     return 2 * math.pi * radius
 
 
@@ -41,7 +44,7 @@ def calculate_rectangle_area(length: float, width: float) -> float:
     Calculate area of a rectangle: length * width
     """
     if length < 0 or width < 0:
-        raise ValueError("Dimensions cannot be negative")
+        raise ValueError(ERR_DIMENSIONS_NEGATIVE)
     return length * width
 
 
@@ -51,7 +54,7 @@ def calculate_rectangle_perimeter(length: float, width: float) -> float:
     Calculate perimeter of a rectangle: 2 * (length + width)
     """
     if length < 0 or width < 0:
-        raise ValueError("Dimensions cannot be negative")
+        raise ValueError(ERR_DIMENSIONS_NEGATIVE)
     return 2 * (length + width)
 
 
@@ -61,7 +64,7 @@ def calculate_triangle_area(base: float, height: float) -> float:
     Calculate area of a triangle: (base * height) / 2
     """
     if base < 0 or height < 0:
-        raise ValueError("Dimensions cannot be negative")
+        raise ValueError(ERR_DIMENSIONS_NEGATIVE)
     return (base * height) / 2
 
 
@@ -89,7 +92,7 @@ def calculate_sphere_volume(radius: float) -> float:
     Calculate volume of a sphere: (4/3) * π * r³
     """
     if radius < 0:
-        raise ValueError("Radius cannot be negative")
+        raise ValueError(ERR_RADIUS_NEGATIVE)
     return (4/3) * math.pi * radius ** 3
 
 
@@ -99,7 +102,7 @@ def calculate_sphere_surface_area(radius: float) -> float:
     Calculate surface area of a sphere: 4 * π * r²
     """
     if radius < 0:
-        raise ValueError("Radius cannot be negative")
+        raise ValueError(ERR_RADIUS_NEGATIVE)
     return 4 * math.pi * radius ** 2
 
 
@@ -109,7 +112,7 @@ def calculate_cylinder_volume(radius: float, height: float) -> float:
     Calculate volume of a cylinder: π * r² * h
     """
     if radius < 0 or height < 0:
-        raise ValueError("Dimensions cannot be negative")
+        raise ValueError(ERR_DIMENSIONS_NEGATIVE)
     return math.pi * radius ** 2 * height
 
 
@@ -119,7 +122,7 @@ def calculate_cylinder_surface_area(radius: float, height: float) -> float:
     Calculate surface area of a cylinder: 2πr(r + h)
     """
     if radius < 0 or height < 0:
-        raise ValueError("Dimensions cannot be negative")
+        raise ValueError(ERR_DIMENSIONS_NEGATIVE)
     return 2 * math.pi * radius * (radius + height)
 
 
@@ -129,7 +132,7 @@ def calculate_cone_volume(radius: float, height: float) -> float:
     Calculate volume of a cone: (1/3) * π * r² * h
     """
     if radius < 0 or height < 0:
-        raise ValueError("Dimensions cannot be negative")
+        raise ValueError(ERR_DIMENSIONS_NEGATIVE)
     return (1/3) * math.pi * radius ** 2 * height
 
 
@@ -159,7 +162,7 @@ def calculate_rectangular_prism_volume(length: float, width: float, height: floa
     Calculate volume of a rectangular prism: length * width * height
     """
     if length < 0 or width < 0 or height < 0:
-        raise ValueError("Dimensions cannot be negative")
+        raise ValueError(ERR_DIMENSIONS_NEGATIVE)
     return length * width * height
 
 
@@ -241,7 +244,7 @@ def calculate_trapezoid_area(base1: float, base2: float, height: float) -> float
     Calculate area of a trapezoid: ((base1 + base2) / 2) * height
     """
     if base1 < 0 or base2 < 0 or height < 0:
-        raise ValueError("Dimensions cannot be negative")
+        raise ValueError(ERR_DIMENSIONS_NEGATIVE)
     return ((base1 + base2) / 2) * height
 
 
@@ -251,6 +254,6 @@ def calculate_parallelogram_area(base: float, height: float) -> float:
     Calculate area of a parallelogram: base * height
     """
     if base < 0 or height < 0:
-        raise ValueError("Dimensions cannot be negative")
+        raise ValueError(ERR_DIMENSIONS_NEGATIVE)
     return base * height
 

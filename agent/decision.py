@@ -41,7 +41,7 @@ class DecisionLayer:
         self.user_preferences = user_preferences or {}
         logger.info("[DECISION] Decision Layer initialized")
     
-    async def decide(
+    def decide(
         self, 
         perception: PerceptionOutput,
         memory: MemoryRetrievalResult,

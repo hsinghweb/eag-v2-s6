@@ -226,7 +226,7 @@ class CognitiveAgent:
         
         return replace_recursive(copy.deepcopy(params))
     
-    async def _execute_perception_layer(self, query: str):
+    def _execute_perception_layer(self, query: str):
         """Execute perception layer if not already done."""
         if self.state.perception is not None:
             return self.state.perception
@@ -236,7 +236,7 @@ class CognitiveAgent:
         logger.info(f"[AGENT] ITERATION {self.state.iteration}/{MAX_ITERATIONS}: Perception Layer (LLM Call)")
         logger.info("-" * 80)
         
-        perception = await self.perception.perceive(query)
+        perception = self.perception.perceive(query)
         self.state.perception = perception
         
         if perception.extracted_facts:
@@ -245,7 +245,7 @@ class CognitiveAgent:
         logger.info(f"[AGENT] ✓ Iteration {self.state.iteration} complete: Perception")
         return perception
     
-    async def _execute_decision_layer(self, perception, query):
+    def _execute_decision_layer(self, perception, query):
         """Execute decision layer."""
         memory_query = MemoryQuery(query=query, max_results=5, min_relevance=0.3)
         memory_retrieval = self.memory.retrieve_relevant_facts(memory_query)
@@ -257,7 +257,7 @@ class CognitiveAgent:
         logger.info(f"[AGENT] ITERATION {self.state.iteration}/{MAX_ITERATIONS}: Decision Layer (LLM Call)")
         logger.info("-" * 80)
         
-        decision = await self.decision.decide(
+        decision = self.decision.decide(
             perception=perception,
             memory=memory_retrieval,
             available_tools=available_tools,
@@ -392,12 +392,12 @@ class CognitiveAgent:
     
     async def _run_cognitive_loop(self, query: str):
         """Run a single cognitive loop and return final_result if found."""
-        perception = await self._execute_perception_layer(query)
+        perception = self._execute_perception_layer(query)
         
         if self.state.iteration >= MAX_ITERATIONS:
             return None, True  # result, should_stop
         
-        decision = await self._execute_decision_layer(perception, query)
+        decision = self._execute_decision_layer(perception, query)
         
         if self.state.iteration >= MAX_ITERATIONS:
             return None, True
