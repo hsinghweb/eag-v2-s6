@@ -129,11 +129,23 @@ Your job is to output a JSON object with this structure:
 - response: Generate a text response to the user
 - query_memory: Retrieve information from memory (not yet implemented)
 
+**Available Tool Categories:**
+1. **Arithmetic**: Basic calculations (sum, product, difference, division, percentage, factorial, permutation, combination)
+2. **Logical Reasoning**: Boolean logic (AND, OR, NOT, XOR, implications, syllogisms, truth evaluation)
+3. **Algebra**: Equations (linear, quadratic, polynomials, systems), sequences (arithmetic, geometric), powers, roots
+4. **Geometry**: Areas, perimeters, volumes (circles, rectangles, triangles, spheres, cylinders, cubes, distance calculations)
+5. **Statistics**: Mean, median, mode, range, variance, standard deviation, quartiles, correlation, regression, probability
+6. **PowerPoint**: Create presentations, draw shapes, add text
+7. **Email**: Send results via Gmail
+8. **Database**: Employee salary lookup
+
 **Planning Guidelines:**
 1. Break complex tasks into sequential steps
 2. Consider what information you have from memory
 3. Only use tools that are available
 4. Set should_continue to false when ready to give final answer
+5. For word problems, extract the mathematical operation needed and use appropriate tools
+6. Match tool selection to user's math_ability preference when available
 
 **Examples:**
 
@@ -159,6 +171,58 @@ Query: "What is 2 + 3?"
     ],
     "reasoning": "Simple arithmetic query requiring one calculation tool",
     "expected_outcome": "User receives sum of 2 and 3",
+    "confidence": 1.0,
+    "should_continue": false
+}}
+
+Query: "A circle has radius 5. What is its area?"
+{{
+    "action_plan": [
+        {{
+            "step_number": 1,
+            "action_type": "tool_call",
+            "description": "Calculate area of circle with radius 5",
+            "tool_name": "t_circle_area",
+            "parameters": {{"input": {{"radius": 5}}}},
+            "reasoning": "Geometry problem: need to calculate circle area using formula πr²"
+        }},
+        {{
+            "step_number": 2,
+            "action_type": "response",
+            "description": "Return the calculated area",
+            "tool_name": null,
+            "parameters": {{}},
+            "reasoning": "Calculation complete"
+        }}
+    ],
+    "reasoning": "Geometry word problem requiring circle area calculation",
+    "expected_outcome": "User receives area of circle with radius 5",
+    "confidence": 1.0,
+    "should_continue": false
+}}
+
+Query: "Find the average of 10, 20, 30, 40, 50"
+{{
+    "action_plan": [
+        {{
+            "step_number": 1,
+            "action_type": "tool_call",
+            "description": "Calculate mean of the numbers",
+            "tool_name": "t_mean",
+            "parameters": {{"input": {{"numbers": [10, 20, 30, 40, 50]}}}},
+            "reasoning": "Statistics problem: calculate arithmetic mean of given values"
+        }},
+        {{
+            "step_number": 2,
+            "action_type": "response",
+            "description": "Return the mean value",
+            "tool_name": null,
+            "parameters": {{}},
+            "reasoning": "Statistical calculation complete"
+        }}
+    ],
+    "reasoning": "Statistics word problem requiring mean calculation",
+    "expected_outcome": "User receives the average (mean) of the numbers",
     "confidence": 1.0,
     "should_continue": false
 }}

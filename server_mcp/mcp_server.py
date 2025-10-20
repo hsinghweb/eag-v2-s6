@@ -15,7 +15,7 @@ from pptx.util import Inches
 from pptx.dml.color import RGBColor
 from pptx.util import Pt
 import asyncio
-from server_mcp.tools import (
+from server_mcp.tools_arithmetic import (
     number_list_to_sum,
     calculate_difference,
     number_list_to_product,
@@ -29,6 +29,99 @@ from server_mcp.tools import (
     calculate_salary_for_id,
     calculate_salary_for_name,
     calculate_percentage,
+    # New arithmetic functions
+    calculate_absolute_value,
+    calculate_modulo,
+    calculate_floor_division,
+    calculate_ceiling,
+    calculate_floor,
+    calculate_round,
+    calculate_gcd,
+    calculate_lcm,
+    is_prime,
+    find_prime_factors,
+    calculate_average,
+    find_max,
+    find_min,
+    calculate_square,
+    calculate_square_root,
+    calculate_cube,
+    calculate_cube_root,
+    convert_to_fraction,
+    calculate_reciprocal,
+)
+
+# Import logical reasoning tools
+from server_mcp.tools_logical import (
+    evaluate_logical_and,
+    evaluate_logical_or,
+    evaluate_logical_not,
+    evaluate_implication,
+    evaluate_biconditional,
+    evaluate_xor,
+    solve_syllogism,
+    count_true_values,
+    majority_vote,
+    evaluate_complex_expression,
+)
+
+# Import algebra tools
+from server_mcp.tools_algebra import (
+    solve_linear_equation,
+    solve_quadratic_equation,
+    evaluate_polynomial,
+    solve_system_2x2,
+    calculate_power,
+    calculate_nth_root,
+    expand_binomial,
+    calculate_arithmetic_sequence_sum,
+    calculate_geometric_sequence_sum,
+    find_arithmetic_sequence_term,
+    find_geometric_sequence_term,
+    simplify_ratio,
+)
+
+# Import geometry tools
+from server_mcp.tools_geometry import (
+    calculate_circle_area,
+    calculate_circle_circumference,
+    calculate_rectangle_area,
+    calculate_rectangle_perimeter,
+    calculate_triangle_area,
+    calculate_triangle_area_heron,
+    calculate_sphere_volume,
+    calculate_sphere_surface_area,
+    calculate_cylinder_volume,
+    calculate_cylinder_surface_area,
+    calculate_cone_volume,
+    calculate_cube_volume,
+    calculate_cube_surface_area,
+    calculate_rectangular_prism_volume,
+    calculate_distance_2d,
+    calculate_distance_3d,
+    calculate_pythagorean_theorem,
+    calculate_trapezoid_area,
+    calculate_parallelogram_area,
+)
+
+# Import statistics tools
+from server_mcp.tools_statistics import (
+    calculate_mean,
+    calculate_median,
+    calculate_mode,
+    calculate_range,
+    calculate_variance,
+    calculate_standard_deviation,
+    calculate_percentile,
+    calculate_quartiles,
+    calculate_interquartile_range,
+    calculate_z_score,
+    calculate_correlation_coefficient,
+    calculate_linear_regression,
+    calculate_factorial_stat,
+    calculate_combinations_stat,
+    calculate_probability_union,
+    calculate_probability_complement,
 )
 from server_mcp.models import (
     DrawRectangleInput, DrawRectangleOutput,
@@ -37,6 +130,10 @@ from server_mcp.models import (
     SendGmailInput, SendGmailOutput,
     NumberListInput, NumberListOutput,
     TwoNumberInput, TwoNumberOutput,
+    SingleNumberInput, SingleNumberOutput,
+    SingleIntInput, TwoIntInput,
+    RoundInput, PrimeCheckOutput, PrimeFactorsOutput,
+    FractionOutput, FractionInput,
     PercentageInput, PercentageOutput,
     StringToCharsInput, StringToCharsOutput,
     ExponentialInput, ExponentialOutput,
@@ -46,6 +143,27 @@ from server_mcp.models import (
     CombinationInput, CombinationOutput,
     EmployeeIdInput, EmployeeNameInput, SalaryOutput,
     FallbackInput, FallbackOutput,
+    # Logical models
+    BooleanListInput, BooleanOutput,
+    TwoBooleanInput, SingleBooleanInput,
+    LogicalExpressionInput, IntOutput,
+    # Algebra models
+    LinearEquationInput, LinearEquationOutput,
+    QuadraticEquationInput, QuadraticEquationOutput,
+    PolynomialInput, System2x2Input, System2x2Output,
+    PowerInput, RootInput, BinomialExpansionInput,
+    FloatListOutput, ArithmeticSequenceInput, GeometricSequenceInput,
+    RatioInput, RatioOutput,
+    # Geometry models
+    RadiusInput, RectangleInput,
+    TriangleBaseHeightInput, TriangleThreeSidesInput,
+    CylinderInput, CubeInput, RectangularPrismInput,
+    Point2DInput, Point3DInput, PythagoreanInput, TrapezoidInput,
+    # Statistics models
+    StatNumberListInput, StatFloatListOutput,
+    VarianceInput, PercentileInput, QuartilesOutput,
+    ZScoreInput, CorrelationInput, RegressionOutput,
+    ProbabilityUnionInput, ProbabilityInput,
 )
 import logging
 from datetime import datetime
@@ -509,11 +627,619 @@ def t_calculate_percentage(input: PercentageInput) -> PercentageOutput:
     return PercentageOutput(result=result)
 
 @mcp.tool()
+def t_absolute_value(input: SingleNumberInput) -> SingleNumberOutput:
+    """Calculate absolute value of a number"""
+    logger.info(f"Calling t_absolute_value({input.value})")
+    result = calculate_absolute_value(input.value)
+    return SingleNumberOutput(result=result)
+
+@mcp.tool()
+def t_modulo(input: TwoNumberInput) -> TwoNumberOutput:
+    """Calculate modulo (remainder)"""
+    logger.info(f"Calling t_modulo({input.a}, {input.b})")
+    result = calculate_modulo(input.a, input.b)
+    return TwoNumberOutput(result=result)
+
+@mcp.tool()
+def t_floor_division(input: TwoNumberInput) -> TwoNumberOutput:
+    """Calculate floor division (integer division)"""
+    logger.info(f"Calling t_floor_division({input.a}, {input.b})")
+    result = calculate_floor_division(input.a, input.b)
+    return TwoNumberOutput(result=float(result))
+
+@mcp.tool()
+def t_ceiling(input: SingleNumberInput) -> SingleNumberOutput:
+    """Round number up to nearest integer"""
+    logger.info(f"Calling t_ceiling({input.value})")
+    result = calculate_ceiling(input.value)
+    return SingleNumberOutput(result=float(result))
+
+@mcp.tool()
+def t_floor(input: SingleNumberInput) -> SingleNumberOutput:
+    """Round number down to nearest integer"""
+    logger.info(f"Calling t_floor({input.value})")
+    result = calculate_floor(input.value)
+    return SingleNumberOutput(result=float(result))
+
+@mcp.tool()
+def t_round(input: RoundInput) -> SingleNumberOutput:
+    """Round number to specified decimal places"""
+    logger.info(f"Calling t_round({input.number}, {input.decimals} decimals)")
+    result = calculate_round(input.number, input.decimals)
+    return SingleNumberOutput(result=result)
+
+@mcp.tool()
+def t_gcd(input: TwoIntInput) -> IntOutput:
+    """Calculate Greatest Common Divisor (GCD)"""
+    logger.info(f"Calling t_gcd({input.a}, {input.b})")
+    result = calculate_gcd(input.a, input.b)
+    return IntOutput(result=result)
+
+@mcp.tool()
+def t_lcm(input: TwoIntInput) -> IntOutput:
+    """Calculate Least Common Multiple (LCM)"""
+    logger.info(f"Calling t_lcm({input.a}, {input.b})")
+    result = calculate_lcm(input.a, input.b)
+    return IntOutput(result=result)
+
+@mcp.tool()
+def t_is_prime(input: SingleIntInput) -> PrimeCheckOutput:
+    """Check if a number is prime"""
+    logger.info(f"Calling t_is_prime({input.n})")
+    result = is_prime(input.n)
+    return PrimeCheckOutput(result=result, number=input.n)
+
+@mcp.tool()
+def t_prime_factors(input: SingleIntInput) -> PrimeFactorsOutput:
+    """Find all prime factors of a number"""
+    logger.info(f"Calling t_prime_factors({input.n})")
+    factors = find_prime_factors(input.n)
+    return PrimeFactorsOutput(factors=factors)
+
+@mcp.tool()
+def t_average(input: NumberListInput) -> TwoNumberOutput:
+    """Calculate average of numbers"""
+    logger.info(f"Calling t_average with {len(input.numbers)} numbers")
+    result = calculate_average(input.numbers)
+    return TwoNumberOutput(result=result)
+
+@mcp.tool()
+def t_max(input: NumberListInput) -> TwoNumberOutput:
+    """Find maximum value in list"""
+    logger.info(f"Calling t_max with {len(input.numbers)} numbers")
+    result = find_max(input.numbers)
+    return TwoNumberOutput(result=result)
+
+@mcp.tool()
+def t_min(input: NumberListInput) -> TwoNumberOutput:
+    """Find minimum value in list"""
+    logger.info(f"Calling t_min with {len(input.numbers)} numbers")
+    result = find_min(input.numbers)
+    return TwoNumberOutput(result=result)
+
+@mcp.tool()
+def t_square(input: SingleNumberInput) -> SingleNumberOutput:
+    """Calculate square of a number"""
+    logger.info(f"Calling t_square({input.value})")
+    result = calculate_square(input.value)
+    return SingleNumberOutput(result=result)
+
+@mcp.tool()
+def t_square_root(input: SingleNumberInput) -> SingleNumberOutput:
+    """Calculate square root of a number"""
+    logger.info(f"Calling t_square_root({input.value})")
+    result = calculate_square_root(input.value)
+    return SingleNumberOutput(result=result)
+
+@mcp.tool()
+def t_cube(input: SingleNumberInput) -> SingleNumberOutput:
+    """Calculate cube of a number"""
+    logger.info(f"Calling t_cube({input.value})")
+    result = calculate_cube(input.value)
+    return SingleNumberOutput(result=result)
+
+@mcp.tool()
+def t_cube_root(input: SingleNumberInput) -> SingleNumberOutput:
+    """Calculate cube root of a number"""
+    logger.info(f"Calling t_cube_root({input.value})")
+    result = calculate_cube_root(input.value)
+    return SingleNumberOutput(result=result)
+
+@mcp.tool()
+def t_to_fraction(input: FractionInput) -> FractionOutput:
+    """Convert decimal to fraction"""
+    logger.info(f"Calling t_to_fraction({input.decimal})")
+    numerator, denominator = convert_to_fraction(input.decimal, input.max_denominator)
+    return FractionOutput(numerator=numerator, denominator=denominator)
+
+@mcp.tool()
+def t_reciprocal(input: SingleNumberInput) -> SingleNumberOutput:
+    """Calculate reciprocal (1/x) of a number"""
+    logger.info(f"Calling t_reciprocal({input.value})")
+    result = calculate_reciprocal(input.value)
+    return SingleNumberOutput(result=result)
+
+@mcp.tool()
 def fallback_reasoning(input: FallbackInput) -> FallbackOutput:
     """Fallback reasoning step when the agent is uncertain or a tool fails"""
     logger.info(f"Calling fallback_reasoning: {input.description}")
     message = f"Fallback invoked: {input.description}"
     return FallbackOutput(message=message)
+
+
+# ============================================
+# LOGICAL REASONING TOOLS
+# ============================================
+
+@mcp.tool()
+def t_logical_and(input: BooleanListInput) -> BooleanOutput:
+    """Evaluate logical AND of boolean values"""
+    logger.info(f"Calling t_logical_and with {len(input.values)} values")
+    result = evaluate_logical_and(input.values)
+    return BooleanOutput(result=result)
+
+
+@mcp.tool()
+def t_logical_or(input: BooleanListInput) -> BooleanOutput:
+    """Evaluate logical OR of boolean values"""
+    logger.info(f"Calling t_logical_or with {len(input.values)} values")
+    result = evaluate_logical_or(input.values)
+    return BooleanOutput(result=result)
+
+
+@mcp.tool()
+def t_logical_not(input: SingleBooleanInput) -> BooleanOutput:
+    """Evaluate logical NOT"""
+    logger.info(f"Calling t_logical_not({input.value})")
+    result = evaluate_logical_not(input.value)
+    return BooleanOutput(result=result)
+
+
+@mcp.tool()
+def t_implication(input: TwoBooleanInput) -> BooleanOutput:
+    """Evaluate logical implication (premise → conclusion)"""
+    logger.info(f"Calling t_implication({input.a} → {input.b})")
+    result = evaluate_implication(input.a, input.b)
+    return BooleanOutput(result=result)
+
+
+@mcp.tool()
+def t_biconditional(input: TwoBooleanInput) -> BooleanOutput:
+    """Evaluate biconditional (a ↔ b)"""
+    logger.info(f"Calling t_biconditional({input.a} ↔ {input.b})")
+    result = evaluate_biconditional(input.a, input.b)
+    return BooleanOutput(result=result)
+
+
+@mcp.tool()
+def t_xor(input: TwoBooleanInput) -> BooleanOutput:
+    """Evaluate exclusive OR (XOR)"""
+    logger.info(f"Calling t_xor({input.a} ⊕ {input.b})")
+    result = evaluate_xor(input.a, input.b)
+    return BooleanOutput(result=result)
+
+
+@mcp.tool()
+def t_syllogism(input: TwoBooleanInput) -> BooleanOutput:
+    """Solve syllogism using modus ponens"""
+    logger.info(f"Calling t_syllogism({input.a}, {input.b})")
+    result = solve_syllogism(input.a, input.b)
+    return BooleanOutput(result=result)
+
+
+@mcp.tool()
+def t_count_true(input: BooleanListInput) -> IntOutput:
+    """Count number of true values"""
+    logger.info(f"Calling t_count_true with {len(input.values)} values")
+    result = count_true_values(input.values)
+    return IntOutput(result=result)
+
+
+@mcp.tool()
+def t_majority_vote(input: BooleanListInput) -> BooleanOutput:
+    """Determine majority vote from boolean values"""
+    logger.info(f"Calling t_majority_vote with {len(input.values)} values")
+    result = majority_vote(input.values)
+    return BooleanOutput(result=result)
+
+
+@mcp.tool()
+def t_complex_expression(input: LogicalExpressionInput) -> BooleanOutput:
+    """Evaluate complex logical expression"""
+    logger.info(f"Calling t_complex_expression: {input.expression}")
+    result = evaluate_complex_expression(input.expression, input.variables)
+    return BooleanOutput(result=result)
+
+
+# ============================================
+# ALGEBRA TOOLS
+# ============================================
+
+@mcp.tool()
+def t_solve_linear(input: LinearEquationInput) -> LinearEquationOutput:
+    """Solve linear equation ax + b = 0"""
+    logger.info(f"Calling t_solve_linear({input.a}x + {input.b} = 0)")
+    solution = solve_linear_equation(input.a, input.b)
+    return LinearEquationOutput(solution=solution)
+
+
+@mcp.tool()
+def t_solve_quadratic(input: QuadraticEquationInput) -> QuadraticEquationOutput:
+    """Solve quadratic equation ax² + bx + c = 0"""
+    logger.info(f"Calling t_solve_quadratic({input.a}x² + {input.b}x + {input.c} = 0)")
+    solutions = solve_quadratic_equation(input.a, input.b, input.c)
+    return QuadraticEquationOutput(solutions=solutions)
+
+
+@mcp.tool()
+def t_evaluate_polynomial(input: PolynomialInput) -> TwoNumberOutput:
+    """Evaluate polynomial at given x value"""
+    logger.info(f"Calling t_evaluate_polynomial at x={input.x}")
+    result = evaluate_polynomial(input.coefficients, input.x)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_solve_system_2x2(input: System2x2Input) -> System2x2Output:
+    """Solve 2x2 system of linear equations"""
+    logger.info(f"Calling t_solve_system_2x2")
+    solution = solve_system_2x2(input.a1, input.b1, input.c1, input.a2, input.b2, input.c2)
+    if solution:
+        return System2x2Output(x=solution[0], y=solution[1], has_solution=True)
+    return System2x2Output(x=None, y=None, has_solution=False)
+
+
+@mcp.tool()
+def t_power(input: PowerInput) -> TwoNumberOutput:
+    """Calculate base raised to exponent"""
+    logger.info(f"Calling t_power({input.base}^{input.exponent})")
+    result = calculate_power(input.base, input.exponent)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_nth_root(input: RootInput) -> TwoNumberOutput:
+    """Calculate nth root of a number"""
+    logger.info(f"Calling t_nth_root({input.n}th root of {input.number})")
+    result = calculate_nth_root(input.number, input.n)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_binomial_expansion(input: BinomialExpansionInput) -> FloatListOutput:
+    """Expand binomial (a + b)^n"""
+    logger.info(f"Calling t_binomial_expansion({input.a} + {input.b})^{input.n}")
+    values = expand_binomial(input.a, input.b, input.n)
+    return FloatListOutput(values=values)
+
+
+@mcp.tool()
+def t_arithmetic_sum(input: ArithmeticSequenceInput) -> TwoNumberOutput:
+    """Calculate sum of arithmetic sequence"""
+    logger.info(f"Calling t_arithmetic_sum")
+    result = calculate_arithmetic_sequence_sum(input.first, input.common_diff, input.n)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_geometric_sum(input: GeometricSequenceInput) -> TwoNumberOutput:
+    """Calculate sum of geometric sequence"""
+    logger.info(f"Calling t_geometric_sum")
+    result = calculate_geometric_sequence_sum(input.first, input.ratio, input.n)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_arithmetic_term(input: ArithmeticSequenceInput) -> TwoNumberOutput:
+    """Find nth term of arithmetic sequence"""
+    logger.info(f"Calling t_arithmetic_term")
+    result = find_arithmetic_sequence_term(input.first, input.common_diff, input.n)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_geometric_term(input: GeometricSequenceInput) -> TwoNumberOutput:
+    """Find nth term of geometric sequence"""
+    logger.info(f"Calling t_geometric_term")
+    result = find_geometric_sequence_term(input.first, input.ratio, input.n)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_simplify_ratio(input: RatioInput) -> RatioOutput:
+    """Simplify ratio to lowest terms"""
+    logger.info(f"Calling t_simplify_ratio({input.a}:{input.b})")
+    a, b = simplify_ratio(input.a, input.b)
+    return RatioOutput(simplified_a=a, simplified_b=b)
+
+
+# ============================================
+# GEOMETRY TOOLS
+# ============================================
+
+@mcp.tool()
+def t_circle_area(input: RadiusInput) -> TwoNumberOutput:
+    """Calculate area of a circle"""
+    logger.info(f"Calling t_circle_area(r={input.radius})")
+    result = calculate_circle_area(input.radius)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_circle_circumference(input: RadiusInput) -> TwoNumberOutput:
+    """Calculate circumference of a circle"""
+    logger.info(f"Calling t_circle_circumference(r={input.radius})")
+    result = calculate_circle_circumference(input.radius)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_rectangle_area(input: RectangleInput) -> TwoNumberOutput:
+    """Calculate area of a rectangle"""
+    logger.info(f"Calling t_rectangle_area({input.length}x{input.width})")
+    result = calculate_rectangle_area(input.length, input.width)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_rectangle_perimeter(input: RectangleInput) -> TwoNumberOutput:
+    """Calculate perimeter of a rectangle"""
+    logger.info(f"Calling t_rectangle_perimeter({input.length}x{input.width})")
+    result = calculate_rectangle_perimeter(input.length, input.width)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_triangle_area(input: TriangleBaseHeightInput) -> TwoNumberOutput:
+    """Calculate area of a triangle using base and height"""
+    logger.info(f"Calling t_triangle_area(base={input.base}, height={input.height})")
+    result = calculate_triangle_area(input.base, input.height)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_triangle_area_heron(input: TriangleThreeSidesInput) -> TwoNumberOutput:
+    """Calculate area of a triangle using Heron's formula"""
+    logger.info(f"Calling t_triangle_area_heron({input.a}, {input.b}, {input.c})")
+    result = calculate_triangle_area_heron(input.a, input.b, input.c)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_sphere_volume(input: RadiusInput) -> TwoNumberOutput:
+    """Calculate volume of a sphere"""
+    logger.info(f"Calling t_sphere_volume(r={input.radius})")
+    result = calculate_sphere_volume(input.radius)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_sphere_surface_area(input: RadiusInput) -> TwoNumberOutput:
+    """Calculate surface area of a sphere"""
+    logger.info(f"Calling t_sphere_surface_area(r={input.radius})")
+    result = calculate_sphere_surface_area(input.radius)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_cylinder_volume(input: CylinderInput) -> TwoNumberOutput:
+    """Calculate volume of a cylinder"""
+    logger.info(f"Calling t_cylinder_volume(r={input.radius}, h={input.height})")
+    result = calculate_cylinder_volume(input.radius, input.height)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_cylinder_surface_area(input: CylinderInput) -> TwoNumberOutput:
+    """Calculate surface area of a cylinder"""
+    logger.info(f"Calling t_cylinder_surface_area(r={input.radius}, h={input.height})")
+    result = calculate_cylinder_surface_area(input.radius, input.height)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_cone_volume(input: CylinderInput) -> TwoNumberOutput:
+    """Calculate volume of a cone"""
+    logger.info(f"Calling t_cone_volume(r={input.radius}, h={input.height})")
+    result = calculate_cone_volume(input.radius, input.height)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_cube_volume(input: CubeInput) -> TwoNumberOutput:
+    """Calculate volume of a cube"""
+    logger.info(f"Calling t_cube_volume(side={input.side})")
+    result = calculate_cube_volume(input.side)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_cube_surface_area(input: CubeInput) -> TwoNumberOutput:
+    """Calculate surface area of a cube"""
+    logger.info(f"Calling t_cube_surface_area(side={input.side})")
+    result = calculate_cube_surface_area(input.side)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_prism_volume(input: RectangularPrismInput) -> TwoNumberOutput:
+    """Calculate volume of a rectangular prism"""
+    logger.info(f"Calling t_prism_volume({input.length}x{input.width}x{input.height})")
+    result = calculate_rectangular_prism_volume(input.length, input.width, input.height)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_distance_2d(input: Point2DInput) -> TwoNumberOutput:
+    """Calculate distance between two 2D points"""
+    logger.info(f"Calling t_distance_2d")
+    result = calculate_distance_2d(input.x1, input.y1, input.x2, input.y2)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_distance_3d(input: Point3DInput) -> TwoNumberOutput:
+    """Calculate distance between two 3D points"""
+    logger.info(f"Calling t_distance_3d")
+    result = calculate_distance_3d(input.x1, input.y1, input.z1, input.x2, input.y2, input.z2)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_pythagorean(input: PythagoreanInput) -> TwoNumberOutput:
+    """Calculate hypotenuse using Pythagorean theorem"""
+    logger.info(f"Calling t_pythagorean({input.a}, {input.b})")
+    result = calculate_pythagorean_theorem(input.a, input.b)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_trapezoid_area(input: TrapezoidInput) -> TwoNumberOutput:
+    """Calculate area of a trapezoid"""
+    logger.info(f"Calling t_trapezoid_area")
+    result = calculate_trapezoid_area(input.base1, input.base2, input.height)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_parallelogram_area(input: TriangleBaseHeightInput) -> TwoNumberOutput:
+    """Calculate area of a parallelogram"""
+    logger.info(f"Calling t_parallelogram_area(base={input.base}, height={input.height})")
+    result = calculate_parallelogram_area(input.base, input.height)
+    return TwoNumberOutput(result=result)
+
+
+# ============================================
+# STATISTICS TOOLS
+# ============================================
+
+@mcp.tool()
+def t_mean(input: StatNumberListInput) -> TwoNumberOutput:
+    """Calculate arithmetic mean (average)"""
+    logger.info(f"Calling t_mean with {len(input.numbers)} numbers")
+    result = calculate_mean(input.numbers)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_median(input: StatNumberListInput) -> TwoNumberOutput:
+    """Calculate median"""
+    logger.info(f"Calling t_median with {len(input.numbers)} numbers")
+    result = calculate_median(input.numbers)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_mode(input: StatNumberListInput) -> StatFloatListOutput:
+    """Calculate mode(s)"""
+    logger.info(f"Calling t_mode with {len(input.numbers)} numbers")
+    values = calculate_mode(input.numbers)
+    return StatFloatListOutput(values=values)
+
+
+@mcp.tool()
+def t_range(input: StatNumberListInput) -> TwoNumberOutput:
+    """Calculate range (max - min)"""
+    logger.info(f"Calling t_range with {len(input.numbers)} numbers")
+    result = calculate_range(input.numbers)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_variance(input: VarianceInput) -> TwoNumberOutput:
+    """Calculate variance"""
+    logger.info(f"Calling t_variance (sample={input.sample})")
+    result = calculate_variance(input.numbers, input.sample)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_std_deviation(input: VarianceInput) -> TwoNumberOutput:
+    """Calculate standard deviation"""
+    logger.info(f"Calling t_std_deviation (sample={input.sample})")
+    result = calculate_standard_deviation(input.numbers, input.sample)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_percentile(input: PercentileInput) -> TwoNumberOutput:
+    """Calculate percentile"""
+    logger.info(f"Calling t_percentile({input.percentile}th percentile)")
+    result = calculate_percentile(input.numbers, input.percentile)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_quartiles(input: StatNumberListInput) -> QuartilesOutput:
+    """Calculate quartiles (Q1, Q2, Q3)"""
+    logger.info(f"Calling t_quartiles")
+    q1, q2, q3 = calculate_quartiles(input.numbers)
+    return QuartilesOutput(q1=q1, q2=q2, q3=q3)
+
+
+@mcp.tool()
+def t_iqr(input: StatNumberListInput) -> TwoNumberOutput:
+    """Calculate interquartile range (IQR)"""
+    logger.info(f"Calling t_iqr")
+    result = calculate_interquartile_range(input.numbers)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_z_score(input: ZScoreInput) -> TwoNumberOutput:
+    """Calculate z-score"""
+    logger.info(f"Calling t_z_score({input.value})")
+    result = calculate_z_score(input.value, input.mean, input.std_dev)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_correlation(input: CorrelationInput) -> TwoNumberOutput:
+    """Calculate Pearson correlation coefficient"""
+    logger.info(f"Calling t_correlation")
+    result = calculate_correlation_coefficient(input.x_values, input.y_values)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_linear_regression(input: CorrelationInput) -> RegressionOutput:
+    """Calculate linear regression (y = mx + b)"""
+    logger.info(f"Calling t_linear_regression")
+    slope, intercept = calculate_linear_regression(input.x_values, input.y_values)
+    return RegressionOutput(slope=slope, intercept=intercept)
+
+
+@mcp.tool()
+def t_factorial_stat(input: FactorialInput) -> IntOutput:
+    """Calculate factorial for statistics"""
+    logger.info(f"Calling t_factorial_stat({input.n}!)")
+    result = calculate_factorial_stat(input.n)
+    return IntOutput(result=result)
+
+
+@mcp.tool()
+def t_combinations_stat(input: CombinationInput) -> IntOutput:
+    """Calculate combinations C(n,r) for statistics"""
+    logger.info(f"Calling t_combinations_stat(C({input.n},{input.r}))")
+    result = calculate_combinations_stat(input.n, input.r)
+    return IntOutput(result=result)
+
+
+@mcp.tool()
+def t_probability_union(input: ProbabilityUnionInput) -> TwoNumberOutput:
+    """Calculate probability union P(A ∪ B)"""
+    logger.info(f"Calling t_probability_union")
+    result = calculate_probability_union(input.p_a, input.p_b, input.p_both)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_probability_complement(input: ProbabilityInput) -> TwoNumberOutput:
+    """Calculate probability complement P(A')"""
+    logger.info(f"Calling t_probability_complement")
+    result = calculate_probability_complement(input.p)
+    return TwoNumberOutput(result=result)
+
 
 if __name__ == "__main__":
     logger.info("Starting the MCP server")
