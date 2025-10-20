@@ -290,9 +290,8 @@ class CognitiveAgent:
         if action_result.success and action_result.facts_to_remember:
             self.memory.store_facts(action_result.facts_to_remember, source="action")
         
-        if action_step.action_type == "response" and action_result.success:
-            return action_result.result
-        
+        # Don't return response action results - they're just descriptions
+        # The actual results will be extracted in _finalize_result
         return None
     
     def _is_math_tool_result(self, i, ar):
@@ -311,22 +310,52 @@ class CognitiveAgent:
         action_step = self.state.decision.action_plan[i]
         return action_step.action_type == "tool_call" and action_step.tool_name not in NON_MATH_TOOLS
     
+    def _extract_email_status(self, result_str):
+        """Extract email status from result string."""
+        if "successfully" in result_str.lower():
+            return "Email sent successfully"
+        return f"Email status: {result_str}"
+    
+    def _process_action_result(self, i, ar, math_results):
+        """Process a single action result and return email status if applicable."""
+        if not (ar.success and ar.result is not None and i < len(self.state.decision.action_plan)):
+            return None
+        
+        action_step = self.state.decision.action_plan[i]
+        
+        if action_step.action_type != "tool_call":
+            return None
+        
+        result_str = str(ar.result)
+        
+        if action_step.tool_name == "send_gmail":
+            return self._extract_email_status(result_str)
+        
+        if self._is_math_tool_result(i, ar):
+            self._parse_tool_result(result_str, math_results)
+        
+        return None
+    
     def _finalize_result(self):
         """Extract and format final result from tool executions."""
-        tool_results = []
-        tool_results_parsed = []
+        if not (self.state.decision and self.state.decision.action_plan):
+            return None
+        
+        math_results = []
+        email_status = None
         
         for i, ar in enumerate(self.state.action_results):
-            if self._is_math_tool_result(i, ar):
-                result_str = str(ar.result)
-                tool_results.append(result_str)
-                self._parse_tool_result(result_str, tool_results_parsed)
+            status = self._process_action_result(i, ar, math_results)
+            if status:
+                email_status = status
         
-        if tool_results_parsed and len(tool_results_parsed) > 1:
-            return ", ".join([str(v) for v in tool_results_parsed])
-        if tool_results:
-            return tool_results[-1] if len(tool_results) == 1 else " | ".join(tool_results)
-        return None
+        result_parts = []
+        if math_results:
+            result_parts.append(", ".join([str(v) for v in math_results]) if len(math_results) > 1 else str(math_results[0]))
+        if email_status:
+            result_parts.append(email_status)
+        
+        return " | ".join(result_parts) if result_parts else None
     
     def _extract_value_from_json(self, parsed_json):
         """Extract value from parsed JSON object."""
