@@ -128,6 +128,77 @@ class CognitiveAgent:
         
         logger.info(f"[AGENT] Stored {len(self.preferences)} user preferences in memory")
     
+    def _replace_result_placeholders(self, params: dict, results_map: dict) -> dict:
+        """
+        Replace result placeholders like 'RESULT_FROM_STEP_1' with actual values.
+        
+        Args:
+            params: Parameters dict that may contain placeholders
+            results_map: Map of step_number -> result value
+            
+        Returns:
+            Updated parameters with placeholders replaced
+        """
+        import json
+        import re
+        import copy
+        
+        # Deep copy to avoid modifying original
+        params_copy = copy.deepcopy(params)
+        
+        def replace_in_value(value, param_name=None):
+            if isinstance(value, str):
+                # Check for result placeholder patterns
+                match = re.search(r'RESULT_FROM_STEP_(\d+)', value)
+                if match:
+                    step_num = int(match.group(1))
+                    if step_num in results_map:
+                        result = results_map[step_num]
+                        
+                        # Determine if we need string or numeric output
+                        # Parameters like 'content', 'text', 'message' should be strings
+                        needs_string = param_name and param_name.lower() in ['content', 'text', 'message', 'body', 'description']
+                        
+                        # Try to extract value from result
+                        extracted_value = None
+                        if isinstance(result, (int, float)):
+                            extracted_value = result
+                        elif isinstance(result, str):
+                            try:
+                                # Try to parse as JSON
+                                parsed = json.loads(result)
+                                # Extract value from common fields
+                                for key in ['solution', 'result', 'value', 'answer']:
+                                    if key in parsed and parsed[key] is not None:
+                                        extracted_value = float(parsed[key])
+                                        break
+                            except:
+                                # Try to extract number directly
+                                num_match = re.search(r'-?\d+\.?\d*', result)
+                                if num_match:
+                                    extracted_value = float(num_match.group())
+                        
+                        # Return appropriate format
+                        if extracted_value is not None:
+                            if needs_string:
+                                # Format nicely for text output
+                                if isinstance(extracted_value, float) and extracted_value.is_integer():
+                                    return f"The result is: {int(extracted_value)}"
+                                else:
+                                    return f"The result is: {extracted_value}"
+                            else:
+                                # Return numeric value for calculations
+                                return extracted_value
+                        
+                        return result
+            elif isinstance(value, dict):
+                return {k: replace_in_value(v, k) for k, v in value.items()}
+            elif isinstance(value, list):
+                return [replace_in_value(item) for item in value]
+            return value
+        
+        return replace_in_value(params_copy)
+    
     async def process_query(self, query: str) -> AgentResponse:
         """
         Process a user query through the cognitive layers.
@@ -209,11 +280,25 @@ class CognitiveAgent:
                 # LAYER 4: ACTION 🎯
                 # ============================================================
                 # Execute each action in the plan
+                # Keep track of results for chaining
+                action_results_map = {}
+                
                 for action_step in decision.action_plan:
                     logger.info(f"\n[AGENT] Executing action {action_step.step_number}: {action_step.description}")
                     
+                    # Replace result placeholders in parameters
+                    if action_step.parameters:
+                        action_step.parameters = self._replace_result_placeholders(
+                            action_step.parameters, 
+                            action_results_map
+                        )
+                    
                     action_result = await self.action.execute(action_step)
                     self.state.action_results.append(action_result)
+                    
+                    # Store result for future steps
+                    if action_result.success and action_result.result is not None:
+                        action_results_map[action_step.step_number] = action_result.result
                     
                     # Store action facts in memory
                     if action_result.success and action_result.facts_to_remember:
@@ -238,20 +323,50 @@ class CognitiveAgent:
             # FINALIZATION
             # ============================================================
             # Extract actual computed values from tool executions
+            # Exclude non-mathematical tools from result display
+            NON_MATH_TOOLS = ['send_gmail', 'draw_rectangle', 'add_text_in_powerpoint']
+            
             tool_results = []
+            tool_results_parsed = []
             if self.state.decision and self.state.decision.action_plan:
                 for i, ar in enumerate(self.state.action_results):
                     if ar.success and ar.result is not None:
                         # Get the corresponding action step to check type
                         if i < len(self.state.decision.action_plan):
                             action_step = self.state.decision.action_plan[i]
-                            # Only include tool_call results (actual computations)
-                            if action_step.action_type == "tool_call":
-                                tool_results.append(str(ar.result))
+                            # Only include tool_call results that are mathematical computations
+                            # Exclude email/powerpoint/presentation tools
+                            if action_step.action_type == "tool_call" and action_step.tool_name not in NON_MATH_TOOLS:
+                                result_str = str(ar.result)
+                                tool_results.append(result_str)
+                                
+                                # Try to parse JSON results to extract actual values
+                                try:
+                                    import json
+                                    import re
+                                    # Handle various JSON formats
+                                    if result_str.strip().startswith('{'):
+                                        parsed = json.loads(result_str)
+                                        # Extract numeric values from common fields
+                                        for key in ['solution', 'result', 'value', 'answer']:
+                                            if key in parsed and parsed[key] is not None:
+                                                tool_results_parsed.append(float(parsed[key]))
+                                                break
+                                    else:
+                                        # Try to extract number directly
+                                        num_match = re.search(r'-?\d+\.?\d*', result_str)
+                                        if num_match:
+                                            tool_results_parsed.append(float(num_match.group()))
+                                except:
+                                    pass
             
-            # Build final result from tool executions or use final_result if it's meaningful
-            if tool_results:
-                # We have actual computed values - use those
+            # Build final result from tool executions
+            if tool_results_parsed and len(tool_results_parsed) > 1:
+                # Multiple numeric results - format nicely
+                final_result = ", ".join([str(v) for v in tool_results_parsed])
+                logger.info(f"[AGENT] Using multiple computed results: {final_result}")
+            elif tool_results:
+                # Use the last tool result
                 final_result = tool_results[-1] if len(tool_results) == 1 else " | ".join(tool_results)
                 logger.info(f"[AGENT] Using computed result: {final_result}")
             elif final_result is None:

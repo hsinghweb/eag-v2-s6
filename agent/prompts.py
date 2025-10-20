@@ -284,6 +284,40 @@ Query: "Solve the equation x + 4 = 5"
     "should_continue": false
 }}
 
+Query: "Two consecutive numbers sum to 41. What are they?"
+{{
+    "action_plan": [
+        {{
+            "step_number": 1,
+            "action_type": "tool_call",
+            "description": "Solve for first number: 2x + 1 = 41",
+            "tool_name": "t_solve_linear",
+            "parameters": {{"input": {{"equation_string": "2x + 1 = 41"}}}},
+            "reasoning": "Let x be first number, x+1 be second. Equation: x + (x+1) = 41 → 2x + 1 = 41"
+        }},
+        {{
+            "step_number": 2,
+            "action_type": "tool_call",
+            "description": "Calculate second number by adding 1 to first number",
+            "tool_name": "t_add",
+            "parameters": {{"input": {{"a": "RESULT_FROM_STEP_1", "b": 1}}}},
+            "reasoning": "Second consecutive number is first number plus 1"
+        }},
+        {{
+            "step_number": 3,
+            "action_type": "response",
+            "description": "Present both numbers",
+            "tool_name": null,
+            "parameters": {{}},
+            "reasoning": "All calculations complete"
+        }}
+    ],
+    "reasoning": "Multi-value problem: need to calculate and return both consecutive numbers",
+    "expected_outcome": "User receives both numbers: 20 and 21",
+    "confidence": 1.0,
+    "should_continue": false
+}}
+
 **Important:** All tool parameters must be wrapped in an "input" object. For example:
 - t_number_list_to_sum: {{"input": {{"numbers": [1, 2, 3]}}}}
 - t_calculate_difference: {{"input": {{"a": 300, "b": 50}}}}

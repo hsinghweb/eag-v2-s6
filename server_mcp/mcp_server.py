@@ -17,6 +17,7 @@ from pptx.util import Pt
 import asyncio
 from server_mcp.tools_arithmetic import (
     number_list_to_sum,
+    add_numbers,
     calculate_difference,
     number_list_to_product,
     calculate_division,
@@ -545,6 +546,13 @@ def t_number_list_to_sum(input: NumberListInput) -> NumberListOutput:
     logger.info(f"Calling t_number_list_to_sum with {len(input.numbers)} numbers")
     result = number_list_to_sum(input.numbers)
     return NumberListOutput(result=result)
+
+@mcp.tool()
+def t_add(input: TwoNumberInput) -> TwoNumberOutput:
+    """Add two numbers"""
+    logger.info(f"Calling t_add({input.a} + {input.b})")
+    result = add_numbers(input.a, input.b)
+    return TwoNumberOutput(result=result)
 
 @mcp.tool()
 def t_calculate_difference(input: TwoNumberInput) -> TwoNumberOutput:

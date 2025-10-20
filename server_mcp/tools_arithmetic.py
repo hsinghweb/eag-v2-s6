@@ -18,6 +18,20 @@ def number_list_to_sum(lst):
         return 0
     return sum(lst)
 
+
+@log_function
+def add_numbers(a: float, b: float):
+    """Add two numbers together.
+    
+    Args:
+        a: First number
+        b: Second number
+        
+    Returns:
+        Sum of a and b
+    """
+    return a + b
+
 @log_function
 def calculate_difference(a, b):
     return a - b
