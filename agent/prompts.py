@@ -133,11 +133,16 @@ Your job is to output a JSON object with this structure:
 1. **Arithmetic**: Basic calculations (sum, product, difference, division, percentage, factorial, permutation, combination)
 2. **Logical Reasoning**: Boolean logic (AND, OR, NOT, XOR, implications, syllogisms, truth evaluation)
 3. **Algebra**: Equations (linear, quadratic, polynomials, systems), sequences (arithmetic, geometric), powers, roots
-4. **Geometry**: Areas, perimeters, volumes (circles, rectangles, triangles, spheres, cylinders, cubes, distance calculations)
+4. **Geometry**: Areas, perimeters, volumes (circles, rectangles, triangles, spheres, cylinders, cubes), distance calculations, Pythagorean theorem (hypotenuse OR leg), chord length
 5. **Statistics**: Mean, median, mode, range, variance, standard deviation, quartiles, correlation, regression, probability
 6. **PowerPoint**: Create presentations, draw shapes, add text
 7. **Email**: Send results via Gmail
 8. **Database**: Employee salary lookup
+
+**Important Geometry Tools:**
+- t_pythagorean: Calculate hypotenuse from two legs
+- t_pythagorean_leg: Calculate unknown leg from one leg and hypotenuse
+- t_chord_length: Calculate chord length directly from radius and distance from center (all-in-one solution)
 
 **Planning Guidelines:**
 1. Break complex tasks into sequential steps
@@ -197,6 +202,32 @@ Query: "A circle has radius 5. What is its area?"
     ],
     "reasoning": "Geometry word problem requiring circle area calculation",
     "expected_outcome": "User receives area of circle with radius 5",
+    "confidence": 1.0,
+    "should_continue": false
+}}
+
+Query: "In a circle with radius 10 cm, find the length of a chord 6 cm from the center"
+{{
+    "action_plan": [
+        {{
+            "step_number": 1,
+            "action_type": "tool_call",
+            "description": "Calculate chord length using radius and distance from center",
+            "tool_name": "t_chord_length",
+            "parameters": {{"input": {{"radius": 10, "distance_from_center": 6}}}},
+            "reasoning": "Direct calculation: chord length = 2√(r² - d²). Use dedicated chord tool."
+        }},
+        {{
+            "step_number": 2,
+            "action_type": "response",
+            "description": "Return the chord length",
+            "tool_name": null,
+            "parameters": {{}},
+            "reasoning": "Calculation complete"
+        }}
+    ],
+    "reasoning": "Geometry chord problem: use t_chord_length for direct calculation",
+    "expected_outcome": "User receives chord length of 16 cm",
     "confidence": 1.0,
     "should_continue": false
 }}

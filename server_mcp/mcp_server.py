@@ -102,6 +102,8 @@ from server_mcp.tools_geometry import (
     calculate_distance_2d,
     calculate_distance_3d,
     calculate_pythagorean_theorem,
+    calculate_pythagorean_leg,
+    calculate_chord_length,
     calculate_trapezoid_area,
     calculate_parallelogram_area,
 )
@@ -160,7 +162,7 @@ from server_mcp.models import (
     RadiusInput, RectangleInput,
     TriangleBaseHeightInput, TriangleThreeSidesInput,
     CylinderInput, CubeInput, RectangularPrismInput,
-    Point2DInput, Point3DInput, PythagoreanInput, TrapezoidInput,
+    Point2DInput, Point3DInput, PythagoreanInput, PythagoreanLegInput, ChordInput, TrapezoidInput,
     # Statistics models
     StatNumberListInput, StatFloatListOutput,
     VarianceInput, PercentileInput, QuartilesOutput,
@@ -1116,9 +1118,25 @@ def t_distance_3d(input: Point3DInput) -> TwoNumberOutput:
 
 @mcp.tool()
 def t_pythagorean(input: PythagoreanInput) -> TwoNumberOutput:
-    """Calculate hypotenuse using Pythagorean theorem"""
+    """Calculate hypotenuse using Pythagorean theorem given two legs"""
     logger.info(f"Calling t_pythagorean({input.a}, {input.b})")
     result = calculate_pythagorean_theorem(input.a, input.b)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_pythagorean_leg(input: PythagoreanLegInput) -> TwoNumberOutput:
+    """Calculate unknown leg using Pythagorean theorem given one leg and hypotenuse"""
+    logger.info(f"Calling t_pythagorean_leg(known_leg={input.known_leg}, hypotenuse={input.hypotenuse})")
+    result = calculate_pythagorean_leg(input.known_leg, input.hypotenuse)
+    return TwoNumberOutput(result=result)
+
+
+@mcp.tool()
+def t_chord_length(input: ChordInput) -> TwoNumberOutput:
+    """Calculate length of a chord in a circle given radius and distance from center"""
+    logger.info(f"Calling t_chord_length(radius={input.radius}, distance={input.distance_from_center})")
+    result = calculate_chord_length(input.radius, input.distance_from_center)
     return TwoNumberOutput(result=result)
 
 

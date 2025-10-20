@@ -480,6 +480,18 @@ class PythagoreanInput(BaseModel):
     b: float = Field(..., ge=0, description="Second leg")
 
 
+class PythagoreanLegInput(BaseModel):
+    """Input model for finding a leg given hypotenuse"""
+    known_leg: float = Field(..., ge=0, description="The known leg")
+    hypotenuse: float = Field(..., ge=0, description="The hypotenuse")
+
+
+class ChordInput(BaseModel):
+    """Input model for chord length calculation"""
+    radius: float = Field(..., ge=0, description="Radius of the circle")
+    distance_from_center: float = Field(..., ge=0, description="Distance from center to chord")
+
+
 class TrapezoidInput(BaseModel):
     """Input model for trapezoid"""
     base1: float = Field(..., ge=0, description="First base")

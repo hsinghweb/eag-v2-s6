@@ -190,6 +190,52 @@ def calculate_pythagorean_theorem(a: float, b: float) -> float:
 
 
 @log_function
+def calculate_pythagorean_leg(known_leg: float, hypotenuse: float) -> float:
+    """
+    Calculate unknown leg using Pythagorean theorem: b = √(c² - a²)
+    Given one leg and the hypotenuse, find the other leg.
+    
+    Args:
+        known_leg: The known leg length
+        hypotenuse: The hypotenuse length
+        
+    Returns:
+        The unknown leg length
+    """
+    if known_leg < 0 or hypotenuse < 0:
+        raise ValueError("Side lengths cannot be negative")
+    if known_leg >= hypotenuse:
+        raise ValueError("Leg cannot be greater than or equal to hypotenuse")
+    
+    return math.sqrt(hypotenuse**2 - known_leg**2)
+
+
+@log_function
+def calculate_chord_length(radius: float, distance_from_center: float) -> float:
+    """
+    Calculate the length of a chord in a circle.
+    
+    Given a circle with radius r and a chord at distance d from the center,
+    the chord length = 2 * √(r² - d²)
+    
+    Args:
+        radius: Radius of the circle
+        distance_from_center: Perpendicular distance from center to chord
+        
+    Returns:
+        The length of the chord
+    """
+    if radius < 0 or distance_from_center < 0:
+        raise ValueError("Radius and distance cannot be negative")
+    if distance_from_center > radius:
+        raise ValueError("Distance from center cannot exceed radius")
+    
+    # Using Pythagorean theorem: half_chord = √(r² - d²)
+    half_chord = math.sqrt(radius**2 - distance_from_center**2)
+    return 2 * half_chord
+
+
+@log_function
 def calculate_trapezoid_area(base1: float, base2: float, height: float) -> float:
     """
     Calculate area of a trapezoid: ((base1 + base2) / 2) * height
