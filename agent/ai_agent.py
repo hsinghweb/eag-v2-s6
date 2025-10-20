@@ -59,7 +59,7 @@ genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-2.5-flash')
 
 # Constants
-MAX_ITERATIONS = 5
+MAX_ITERATIONS = 50  # Each LLM call or tool call counts as one iteration
 
 
 class CognitiveAgent:
@@ -128,276 +128,301 @@ class CognitiveAgent:
         
         logger.info(f"[AGENT] Stored {len(self.preferences)} user preferences in memory")
     
-    def _replace_result_placeholders(self, params: dict, results_map: dict) -> dict:
-        """
-        Replace result placeholders like 'RESULT_FROM_STEP_1' with actual values.
-        
-        Args:
-            params: Parameters dict that may contain placeholders
-            results_map: Map of step_number -> result value
-            
-        Returns:
-            Updated parameters with placeholders replaced
-        """
+    def _extract_value_from_result(self, result):
+        """Extract numeric/boolean value from various result formats."""
         import json
         import re
-        import copy
         
-        # Deep copy to avoid modifying original
-        params_copy = copy.deepcopy(params)
+        if isinstance(result, (int, float, bool)):
+            return result
         
-        def replace_in_value(value, param_name=None):
-            if isinstance(value, str):
-                # Check for result placeholder patterns
-                match = re.search(r'RESULT_FROM_STEP_(\d+)', value)
-                if match:
-                    step_num = int(match.group(1))
-                    if step_num in results_map:
-                        result = results_map[step_num]
-                        
-                        # Determine if we need string or numeric output
-                        # Parameters like 'content', 'text', 'message' should be strings
-                        needs_string = param_name and param_name.lower() in ['content', 'text', 'message', 'body', 'description']
-                        
-                        # Try to extract value from result
-                        extracted_value = None
-                        if isinstance(result, (int, float, bool)):
-                            extracted_value = result
-                        elif isinstance(result, str):
-                            try:
-                                # Try to parse as JSON
-                                parsed = json.loads(result)
-                                # Extract value from common fields
-                                for key in ['solution', 'result', 'value', 'answer']:
-                                    if key in parsed and parsed[key] is not None:
-                                        # Check if it's a boolean first
-                                        if isinstance(parsed[key], bool):
-                                            extracted_value = parsed[key]
-                                        else:
-                                            extracted_value = float(parsed[key])
-                                        break
-                            except:
-                                # Try to extract number directly
-                                num_match = re.search(r'-?\d+\.?\d*', result)
-                                if num_match:
-                                    extracted_value = float(num_match.group())
-                        
-                        # Return appropriate format
-                        if extracted_value is not None:
-                            if needs_string:
-                                # Format nicely for text output including query context
-                                # Get the initial query from memory context
-                                initial_query = self.memory.memory_state.context.get("initial_query", "")
-                                
-                                # Format the result value
-                                if isinstance(extracted_value, bool):
-                                    result_str = "True" if extracted_value else "False"
-                                elif isinstance(extracted_value, float) and extracted_value.is_integer():
-                                    result_str = str(int(extracted_value))
-                                else:
-                                    result_str = str(extracted_value)
-                                
-                                # Build comprehensive email content
-                                email_content = "Math AI Agent Result\n"
-                                email_content += "=" * 40 + "\n\n"
-                                if initial_query:
-                                    email_content += f"Query: {initial_query}\n\n"
-                                email_content += f"Result: {result_str}\n\n"
-                                email_content += "=" * 40 + "\n"
-                                email_content += "Computed by Math AI Agent"
-                                
-                                return email_content
-                            else:
-                                # Return numeric/boolean value for calculations
-                                return extracted_value
-                        
-                        return result
-            elif isinstance(value, dict):
-                return {k: replace_in_value(v, k) for k, v in value.items()}
-            elif isinstance(value, list):
-                return [replace_in_value(item) for item in value]
+        if not isinstance(result, str):
+            return None
+        
+        try:
+            parsed = json.loads(result)
+            for key in ['solution', 'result', 'value', 'answer']:
+                if key in parsed and parsed[key] is not None:
+                    return parsed[key]
+        except (json.JSONDecodeError, KeyError):
+            num_match = re.search(r'-?\d+\.?\d*', result)
+            if num_match:
+                return float(num_match.group())
+        
+        return None
+    
+    def _format_result_as_string(self, extracted_value):
+        """Format extracted value as string for email/text output."""
+        if isinstance(extracted_value, bool):
+            return "True" if extracted_value else "False"
+        if isinstance(extracted_value, float) and extracted_value.is_integer():
+            return str(int(extracted_value))
+        return str(extracted_value)
+    
+    def _build_email_content(self, result_str):
+        """Build formatted email content with query and result."""
+        initial_query = self.memory.memory_state.context.get("initial_query", "")
+        lines = [
+            "Math AI Agent Result",
+            "=" * 40,
+            "",
+        ]
+        if initial_query:
+            lines.extend([f"Query: {initial_query}", ""])
+        lines.extend([
+            f"Result: {result_str}",
+            "",
+            "=" * 40,
+            "Computed by Math AI Agent"
+        ])
+        return "\n".join(lines)
+    
+    def _replace_placeholder(self, value, param_name, results_map):
+        """Replace a single placeholder value."""
+        import re
+        
+        if not isinstance(value, str):
             return value
         
-        return replace_in_value(params_copy)
+        match = re.search(r'RESULT_FROM_STEP_(\d+)', value)
+        if not match:
+            return value
+        
+        step_num = int(match.group(1))
+        if step_num not in results_map:
+            return value
+        
+        result = results_map[step_num]
+        extracted = self._extract_value_from_result(result)
+        
+        if extracted is None:
+            return result
+        
+        needs_string = param_name and param_name.lower() in ['content', 'text', 'message', 'body', 'description']
+        
+        if needs_string:
+            result_str = self._format_result_as_string(extracted)
+            return self._build_email_content(result_str)
+        
+        return extracted
+    
+    def _replace_result_placeholders(self, params: dict, results_map: dict) -> dict:
+        """Replace result placeholders like 'RESULT_FROM_STEP_1' with actual values."""
+        import copy
+        
+        def replace_recursive(value, param_name=None):
+            if isinstance(value, str):
+                return self._replace_placeholder(value, param_name, results_map)
+            if isinstance(value, dict):
+                return {k: replace_recursive(v, k) for k, v in value.items()}
+            if isinstance(value, list):
+                return [replace_recursive(item) for item in value]
+            return value
+        
+        return replace_recursive(copy.deepcopy(params))
+    
+    async def _execute_perception_layer(self, query: str):
+        """Execute perception layer if not already done."""
+        if self.state.perception is not None:
+            return self.state.perception
+        
+        self.state.iteration += 1
+        logger.info("\n" + "-" * 80)
+        logger.info(f"[AGENT] ITERATION {self.state.iteration}/{MAX_ITERATIONS}: Perception Layer (LLM Call)")
+        logger.info("-" * 80)
+        
+        perception = await self.perception.perceive(query)
+        self.state.perception = perception
+        
+        if perception.extracted_facts:
+            self.memory.store_facts(perception.extracted_facts, source="perception")
+        
+        logger.info(f"[AGENT] ✓ Iteration {self.state.iteration} complete: Perception")
+        return perception
+    
+    async def _execute_decision_layer(self, perception, query):
+        """Execute decision layer."""
+        memory_query = MemoryQuery(query=query, max_results=5, min_relevance=0.3)
+        memory_retrieval = self.memory.retrieve_relevant_facts(memory_query)
+        
+        available_tools = self.action.get_available_tools()
+        
+        self.state.iteration += 1
+        logger.info("\n" + "-" * 80)
+        logger.info(f"[AGENT] ITERATION {self.state.iteration}/{MAX_ITERATIONS}: Decision Layer (LLM Call)")
+        logger.info("-" * 80)
+        
+        decision = await self.decision.decide(
+            perception=perception,
+            memory=memory_retrieval,
+            available_tools=available_tools,
+            previous_actions=None
+        )
+        self.state.decision = decision
+        logger.info(f"[AGENT] ✓ Iteration {self.state.iteration} complete: Decision ({len(decision.action_plan)} actions planned)")
+        return decision
+    
+    async def _execute_action_step(self, action_step, action_results_map):
+        """Execute a single action step."""
+        if action_step.action_type == "tool_call":
+            self.state.iteration += 1
+            logger.info("\n" + "-" * 80)
+            logger.info(f"[AGENT] ITERATION {self.state.iteration}/{MAX_ITERATIONS}: Action Step {action_step.step_number} - {action_step.tool_name}")
+            logger.info("-" * 80)
+        else:
+            logger.info(f"\n[AGENT] Executing action {action_step.step_number}: {action_step.description} (no iteration count)")
+        
+        if action_step.parameters:
+            action_step.parameters = self._replace_result_placeholders(
+                action_step.parameters, 
+                action_results_map
+            )
+        
+        action_result = await self.action.execute(action_step)
+        self.state.action_results.append(action_result)
+        
+        if action_step.action_type == "tool_call":
+            logger.info(f"[AGENT] ✓ Iteration {self.state.iteration} complete: {action_step.tool_name}")
+        
+        if action_result.success and action_result.result is not None:
+            action_results_map[action_step.step_number] = action_result.result
+        
+        if action_result.success and action_result.facts_to_remember:
+            self.memory.store_facts(action_result.facts_to_remember, source="action")
+        
+        if action_step.action_type == "response" and action_result.success:
+            return action_result.result
+        
+        return None
+    
+    def _is_math_tool_result(self, i, ar):
+        """Check if action result at index i is a math tool result."""
+        NON_MATH_TOOLS = ['send_gmail', 'draw_rectangle', 'add_text_in_powerpoint']
+        
+        if not (ar.success and ar.result is not None):
+            return False
+        
+        if not (self.state.decision and self.state.decision.action_plan):
+            return False
+        
+        if i >= len(self.state.decision.action_plan):
+            return False
+        
+        action_step = self.state.decision.action_plan[i]
+        return action_step.action_type == "tool_call" and action_step.tool_name not in NON_MATH_TOOLS
+    
+    def _finalize_result(self):
+        """Extract and format final result from tool executions."""
+        tool_results = []
+        tool_results_parsed = []
+        
+        for i, ar in enumerate(self.state.action_results):
+            if self._is_math_tool_result(i, ar):
+                result_str = str(ar.result)
+                tool_results.append(result_str)
+                self._parse_tool_result(result_str, tool_results_parsed)
+        
+        if tool_results_parsed and len(tool_results_parsed) > 1:
+            return ", ".join([str(v) for v in tool_results_parsed])
+        if tool_results:
+            return tool_results[-1] if len(tool_results) == 1 else " | ".join(tool_results)
+        return None
+    
+    def _extract_value_from_json(self, parsed_json):
+        """Extract value from parsed JSON object."""
+        for key in ['solution', 'result', 'value', 'answer']:
+            if key in parsed_json and parsed_json[key] is not None:
+                value = parsed_json[key]
+                if isinstance(value, bool):
+                    return "True" if value else "False"
+                return float(value)
+        return None
+    
+    def _parse_tool_result(self, result_str, parsed_list):
+        """Parse a tool result and append to parsed_list."""
+        import json
+        import re
+        
+        try:
+            if result_str.strip().startswith('{'):
+                parsed = json.loads(result_str)
+                extracted = self._extract_value_from_json(parsed)
+                if extracted is not None:
+                    parsed_list.append(extracted)
+            else:
+                num_match = re.search(r'-?\d+\.?\d*', result_str)
+                if num_match:
+                    parsed_list.append(float(num_match.group()))
+        except ValueError:
+            pass
+    
+    async def _run_cognitive_loop(self, query: str):
+        """Run a single cognitive loop and return final_result if found."""
+        perception = await self._execute_perception_layer(query)
+        
+        if self.state.iteration >= MAX_ITERATIONS:
+            return None, True  # result, should_stop
+        
+        decision = await self._execute_decision_layer(perception, query)
+        
+        if self.state.iteration >= MAX_ITERATIONS:
+            return None, True
+        
+        # Execute action plan
+        action_results_map = {}
+        final_result = None
+        
+        for action_step in decision.action_plan:
+            if self.state.iteration >= MAX_ITERATIONS:
+                logger.warning(f"[AGENT] Reached MAX_ITERATIONS limit before action {action_step.step_number}")
+                return final_result, True
+            
+            step_result = await self._execute_action_step(action_step, action_results_map)
+            if step_result is not None:
+                final_result = step_result
+                logger.info(f"[AGENT] Final result obtained: {final_result}")
+        
+        # Check if should continue
+        should_stop = not decision.should_continue or final_result is not None
+        return final_result, should_stop
     
     async def process_query(self, query: str) -> AgentResponse:
-        """
-        Process a user query through the cognitive layers.
-        
-        Flow:
-        1. 👁️ PERCEIVE: Extract intent, entities, facts
-        2. 🧠 REMEMBER: Store facts, retrieve relevant context
-        3. 🧭 DECIDE: Create action plan
-        4. 🎯 ACT: Execute actions
-        5. Repeat if needed
-        
-        Args:
-            query: User query string
-            
-        Returns:
-            AgentResponse: Final response with result
-        """
+        """Process a user query through the cognitive layers."""
         logger.info("=" * 80)
         logger.info(f"[AGENT] Starting cognitive processing for: {query}")
+        logger.info(f"[AGENT] Max iterations allowed: {MAX_ITERATIONS} (each LLM call or tool call = 1 iteration)")
         logger.info("=" * 80)
         
         try:
-            # Reset state for new query
             self.state = CognitiveState()
+            self.memory.update_context("initial_query", query)
             final_result = None
             
-            # Store initial query in memory context
-            self.memory.update_context("initial_query", query)
-            
-            # Cognitive loop
+            cognitive_loop_count = 0
             while self.state.iteration < MAX_ITERATIONS:
-                self.state.iteration += 1
-                logger.info("\n" + "-" * 80)
-                logger.info(f"[AGENT] ITERATION {self.state.iteration}/{MAX_ITERATIONS}")
-                logger.info("-" * 80)
+                cognitive_loop_count += 1
+                logger.info("\n" + "=" * 80)
+                logger.info(f"[AGENT] COGNITIVE LOOP {cognitive_loop_count}")
+                logger.info("=" * 80)
                 
-                # ============================================================
-                # LAYER 1: PERCEPTION 👁️
-                # ============================================================
-                if self.state.perception is None:
-                    # First iteration - perceive the query
-                    perception = await self.perception.perceive(query)
-                    self.state.perception = perception
-                    
-                    # Store extracted facts in memory
-                    if perception.extracted_facts:
-                        self.memory.store_facts(perception.extracted_facts, source="perception")
-                else:
-                    # Subsequent iterations - use existing perception
-                    perception = self.state.perception
+                final_result, should_stop = await self._run_cognitive_loop(query)
                 
-                # ============================================================
-                # LAYER 2: MEMORY 🧠
-                # ============================================================
-                # Retrieve relevant memories
-                memory_query = MemoryQuery(
-                    query=query,
-                    max_results=5,
-                    min_relevance=0.3
-                )
-                memory_retrieval = self.memory.retrieve_relevant_facts(memory_query)
-                
-                # ============================================================
-                # LAYER 3: DECISION 🧭
-                # ============================================================
-                # Get available tools
-                available_tools = self.action.get_available_tools()
-                
-                # Make decision
-                decision = await self.decision.decide(
-                    perception=perception,
-                    memory=memory_retrieval,
-                    available_tools=available_tools,
-                    previous_actions=None  # Simplified for now
-                )
-                self.state.decision = decision
-                
-                # ============================================================
-                # LAYER 4: ACTION 🎯
-                # ============================================================
-                # Execute each action in the plan
-                # Keep track of results for chaining
-                action_results_map = {}
-                
-                for action_step in decision.action_plan:
-                    logger.info(f"\n[AGENT] Executing action {action_step.step_number}: {action_step.description}")
-                    
-                    # Replace result placeholders in parameters
-                    if action_step.parameters:
-                        action_step.parameters = self._replace_result_placeholders(
-                            action_step.parameters, 
-                            action_results_map
-                        )
-                    
-                    action_result = await self.action.execute(action_step)
-                    self.state.action_results.append(action_result)
-                    
-                    # Store result for future steps
-                    if action_result.success and action_result.result is not None:
-                        action_results_map[action_step.step_number] = action_result.result
-                    
-                    # Store action facts in memory
-                    if action_result.success and action_result.facts_to_remember:
-                        self.memory.store_facts(action_result.facts_to_remember, source="action")
-                    
-                    # Check if this is a response action (final answer)
-                    if action_step.action_type == "response" and action_result.success:
-                        final_result = action_result.result
-                        logger.info(f"[AGENT] Final result obtained: {final_result}")
-                
-                # ============================================================
-                # CHECK FOR COMPLETION
-                # ============================================================
-                if not decision.should_continue or final_result is not None:
+                if should_stop:
                     self.state.complete = True
-                    logger.info("[AGENT] Cognitive processing complete")
+                    logger.info("\n" + "=" * 80)
+                    logger.info(f"[AGENT] Cognitive processing complete after {self.state.iteration} iterations")
+                    logger.info("=" * 80)
                     break
                 
-                logger.info(f"[AGENT] Continuing to iteration {self.state.iteration + 1}...")
+                logger.info("[AGENT] Continuing to next cognitive loop...")
             
-            # ============================================================
-            # FINALIZATION
-            # ============================================================
-            # Extract actual computed values from tool executions
-            # Exclude non-mathematical tools from result display
-            NON_MATH_TOOLS = ['send_gmail', 'draw_rectangle', 'add_text_in_powerpoint']
-            
-            tool_results = []
-            tool_results_parsed = []
-            if self.state.decision and self.state.decision.action_plan:
-                for i, ar in enumerate(self.state.action_results):
-                    if ar.success and ar.result is not None:
-                        # Get the corresponding action step to check type
-                        if i < len(self.state.decision.action_plan):
-                            action_step = self.state.decision.action_plan[i]
-                            # Only include tool_call results that are mathematical computations
-                            # Exclude email/powerpoint/presentation tools
-                            if action_step.action_type == "tool_call" and action_step.tool_name not in NON_MATH_TOOLS:
-                                result_str = str(ar.result)
-                                tool_results.append(result_str)
-                                
-                                # Try to parse JSON results to extract actual values
-                                try:
-                                    import json
-                                    import re
-                                    # Handle various JSON formats
-                                    if result_str.strip().startswith('{'):
-                                        parsed = json.loads(result_str)
-                                        # Extract values from common fields (numeric or boolean)
-                                        for key in ['solution', 'result', 'value', 'answer']:
-                                            if key in parsed and parsed[key] is not None:
-                                                value = parsed[key]
-                                                # Handle boolean or numeric values
-                                                if isinstance(value, bool):
-                                                    tool_results_parsed.append("True" if value else "False")
-                                                else:
-                                                    tool_results_parsed.append(float(value))
-                                                break
-                                    else:
-                                        # Try to extract number directly
-                                        num_match = re.search(r'-?\d+\.?\d*', result_str)
-                                        if num_match:
-                                            tool_results_parsed.append(float(num_match.group()))
-                                except:
-                                    pass
-            
-            # Build final result from tool executions
-            if tool_results_parsed and len(tool_results_parsed) > 1:
-                # Multiple numeric results - format nicely
-                final_result = ", ".join([str(v) for v in tool_results_parsed])
-                logger.info(f"[AGENT] Using multiple computed results: {final_result}")
-            elif tool_results:
-                # Use the last tool result
-                final_result = tool_results[-1] if len(tool_results) == 1 else " | ".join(tool_results)
-                logger.info(f"[AGENT] Using computed result: {final_result}")
-            elif final_result is None:
-                # No results at all
-                final_result = "Task completed"
+            # Finalize result
+            if final_result is None:
+                final_result = self._finalize_result()
+                if final_result:
+                    logger.info(f"[AGENT] Using computed result: {final_result}")
+                else:
+                    final_result = "Task completed"
             
             # Save memory to disk
             self.memory.save_memory()
@@ -411,8 +436,19 @@ class CognitiveAgent:
                 full_response=f"Query: {query}\nResult: {final_result}"
             )
             
+            # Count breakdown
+            perception_calls = 1 if self.state.perception else 0
+            decision_calls = 1  # Always at least one decision call
+            tool_calls = len([ar for i, ar in enumerate(self.state.action_results) 
+                             if i < len(self.state.decision.action_plan) and 
+                             self.state.decision.action_plan[i].action_type == "tool_call"])
+            
             logger.info("=" * 80)
             logger.info("[AGENT] Agent completed successfully")
+            logger.info(f"Total Iterations: {self.state.iteration}")
+            logger.info(f"  - Perception LLM calls: {perception_calls}")
+            logger.info(f"  - Decision LLM calls: {decision_calls}")
+            logger.info(f"  - Tool calls: {tool_calls}")
             logger.info(f"Result: {final_result}")
             logger.info("=" * 80 + "\n")
             
