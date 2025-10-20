@@ -1,6 +1,6 @@
 # Agent module for AI-powered assistant with Cognitive Layers
 from .ai_agent import main, CognitiveAgent
-from .prompts import SYSTEM_PROMPT_TEMPLATE, PERCEPTION_PROMPT, DECISION_PROMPT
+from .prompts import PERCEPTION_PROMPT, DECISION_PROMPT
 from . import models
 
 # Cognitive Layers
@@ -15,7 +15,6 @@ __all__ = [
     'CognitiveAgent',
     
     # Prompts
-    'SYSTEM_PROMPT_TEMPLATE',
     'PERCEPTION_PROMPT',
     'DECISION_PROMPT',
     
