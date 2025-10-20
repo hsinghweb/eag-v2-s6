@@ -201,18 +201,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     #query-input {
       width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
+      padding: 10px;
+      margin: 0;
       border: 1px solid #ddd;
       border-radius: 4px;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      resize: vertical;
+      min-height: 80px;
+      box-sizing: border-box;
     }
     #submit-btn {
       background-color: #4285f4;
       color: white;
       border: none;
-      padding: 8px 16px;
+      padding: 10px 20px;
       border-radius: 4px;
       cursor: pointer;
+      width: 100%;
+      font-size: 14px;
+      font-weight: bold;
+      margin: 10px 0;
+      transition: background-color 0.2s;
+    }
+    #submit-btn:hover {
+      background-color: #3367d6;
     }
     #submit-btn:disabled {
       background-color: #cccccc;
@@ -221,9 +234,11 @@ document.addEventListener('DOMContentLoaded', function() {
   `;
   document.head.appendChild(style);
 
-  // Handle Enter key in the input field
-  queryInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
+  // Handle Ctrl+Enter or Shift+Enter in the textarea to submit
+  // Regular Enter creates a new line
+  queryInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.shiftKey)) {
+      e.preventDefault(); // Prevent new line on Ctrl+Enter or Shift+Enter
       sendQuery();
     }
   });
