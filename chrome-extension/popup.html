@@ -21,6 +21,28 @@
       border: 1px solid #ddd;
       border-radius: 4px;
     }
+    .preference-section {
+      margin: 15px 0;
+      padding: 10px;
+      background-color: #f0f7ff;
+      border-radius: 4px;
+      border: 1px solid #d0e4ff;
+    }
+    .preference-section label {
+      display: block;
+      font-size: 12px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 5px;
+    }
+    #math-ability {
+      width: 100%;
+      padding: 6px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 13px;
+      background-color: white;
+    }
     button {
       background-color: #4285f4;
       color: white;
@@ -61,6 +83,19 @@
 </head>
 <body>
   <h1>Math Agent</h1>
+  
+  <!-- User Preference Section -->
+  <div class="preference-section">
+    <label for="math-ability">Your Math Preference:</label>
+    <select id="math-ability">
+      <option value="logical">Logical (Proofs & Reasoning)</option>
+      <option value="arithmetic" selected>Arithmetic (Basic Calculations)</option>
+      <option value="algebra">Algebra (Equations & Symbols)</option>
+      <option value="geometry">Geometry (Shapes & Spaces)</option>
+      <option value="statistics">Statistics (Data & Analysis)</option>
+    </select>
+  </div>
+  
   <input type="text" id="query-input" placeholder="Enter your math query...">
   <button id="submit-btn">Ask</button>
   <div class="loader" id="loader"></div>

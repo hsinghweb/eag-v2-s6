@@ -16,6 +16,7 @@ import google.generativeai as genai
 import logging
 from datetime import datetime
 import traceback
+from typing import Optional, Dict, Any
 
 # Import cognitive layers
 from .perception import PerceptionLayer
@@ -72,27 +73,57 @@ class CognitiveAgent:
     4. Action: Executing the plan
     """
     
-    def __init__(self, session: ClientSession, tools: list):
+    def __init__(self, session: ClientSession, tools: list, preferences: Optional[Dict[str, Any]] = None):
         """
         Initialize the Cognitive Agent.
         
         Args:
             session: MCP client session
             tools: Available MCP tools
+            preferences: User preferences (math ability, location, etc.)
         """
         self.session = session
         self.tools = tools
+        self.preferences = preferences or {}
         
         # Initialize cognitive layers
-        self.perception = PerceptionLayer(model)
+        self.perception = PerceptionLayer(model, user_preferences=self.preferences)
         self.memory = MemoryLayer(memory_file="logs/agent_memory.json")
-        self.decision = DecisionLayer(model)
+        self.decision = DecisionLayer(model, user_preferences=self.preferences)
         self.action = ActionLayer(session, tools)
+        
+        # Store user preferences in memory
+        if self.preferences:
+            self._store_preferences()
         
         # Initialize cognitive state
         self.state = CognitiveState()
         
         logger.info("[AGENT] Cognitive Agent initialized with 4 layers")
+        if self.preferences:
+            logger.info(f"[AGENT] User preferences loaded: {self.preferences}")
+    
+    def _store_preferences(self):
+        """
+        Store user preferences in the Memory Layer.
+        """
+        # Store each preference as a fact
+        for key, value in self.preferences.items():
+            preference_text = f"User preference: {key} = {value}"
+            self.memory.store_fact(
+                content=preference_text,
+                source="user_preferences",
+                relevance_score=1.0
+            )
+        
+        # Also store in user_preferences dict
+        for key, value in self.preferences.items():
+            if key not in self.memory.memory_state.user_preferences:
+                self.memory.memory_state.user_preferences[key] = value
+        
+        # Save memory to persist preferences
+        self.memory.save_memory()
+        logger.info(f"[AGENT] Stored {len(self.preferences)} user preferences in memory")
     
     async def process_query(self, query: str) -> AgentResponse:
         """
@@ -254,17 +285,20 @@ class CognitiveAgent:
             )
 
 
-async def main(query: str):
+async def main(query: str, preferences: Optional[Dict[str, Any]] = None):
     """
     Main entry point for the cognitive agent.
     
     Args:
         query: User query string
+        preferences: Dictionary of user preferences (e.g., math ability, location, etc.)
         
     Returns:
         JSON string with agent response
     """
     logger.info(f"Starting cognitive agent with query: {query}")
+    if preferences:
+        logger.info(f"User preferences: {preferences}")
     
     try:
         # Establish MCP connection
@@ -287,7 +321,7 @@ async def main(query: str):
                 logger.info(f"Successfully retrieved {len(tools)} tools")
                 
                 # Create cognitive agent
-                agent = CognitiveAgent(session, tools)
+                agent = CognitiveAgent(session, tools, preferences=preferences)
                 
                 # Process query
                 response = await agent.process_query(query)

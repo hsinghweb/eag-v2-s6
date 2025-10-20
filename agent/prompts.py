@@ -9,6 +9,9 @@ System prompts for the AI agent.
 PERCEPTION_PROMPT = """
 You are the Perception Layer of an AI agent. Your job is to analyze user input and extract structured information.
 
+**User Preferences:**
+{user_preferences}
+
 Given a user query, you must output a JSON object with the following structure:
 {{
     "intent": "<primary intent of the user>",
@@ -93,6 +96,9 @@ User Query: {query}
 
 DECISION_PROMPT = """
 You are the Decision-Making Layer of an AI agent. Based on the perceived intent and retrieved memory, you must create an action plan.
+
+**User Preferences:**
+{user_preferences}
 
 **Input Information:**
 Perception: {perception}

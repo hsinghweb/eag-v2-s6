@@ -29,14 +29,16 @@ class DecisionLayer:
     considering memory, and picking an action plan.
     """
     
-    def __init__(self, model: genai.GenerativeModel):
+    def __init__(self, model: genai.GenerativeModel, user_preferences: dict = None):
         """
         Initialize the Decision Layer.
         
         Args:
             model: Google Gemini model instance
+            user_preferences: Dictionary of user preferences
         """
         self.model = model
+        self.user_preferences = user_preferences or {}
         logger.info("[DECISION] Decision Layer initialized")
     
     async def decide(
@@ -81,7 +83,14 @@ class DecisionLayer:
             
             tools_list = ", ".join(available_tools)
             
+            # Format user preferences for prompt
+            if self.user_preferences:
+                prefs_text = "\n".join([f"- {k}: {v}" for k, v in self.user_preferences.items()])
+            else:
+                prefs_text = "No preferences set"
+            
             prompt = DECISION_PROMPT.format(
+                user_preferences=prefs_text,
                 perception=json.dumps(perception_summary, indent=2),
                 memory=json.dumps(memory_summary, indent=2),
                 available_tools=tools_list

@@ -21,14 +21,16 @@ class PerceptionLayer:
     👁️ PERCEIVE: Raw input → Structured understanding
     """
     
-    def __init__(self, model: genai.GenerativeModel):
+    def __init__(self, model: genai.GenerativeModel, user_preferences: dict = None):
         """
         Initialize the Perception Layer.
         
         Args:
             model: Google Gemini model instance
+            user_preferences: Dictionary of user preferences
         """
         self.model = model
+        self.user_preferences = user_preferences or {}
         logger.info("Perception Layer initialized")
     
     async def perceive(self, query: str) -> PerceptionOutput:
@@ -47,8 +49,17 @@ class PerceptionLayer:
         logger.info(f"[PERCEIVE] Analyzing query: {query}")
         
         try:
-            # Format the perception prompt with the user query
-            prompt = PERCEPTION_PROMPT.format(query=query)
+            # Format user preferences for prompt
+            if self.user_preferences:
+                prefs_text = "\n".join([f"- {k}: {v}" for k, v in self.user_preferences.items()])
+            else:
+                prefs_text = "No preferences set"
+            
+            # Format the perception prompt with the user query and preferences
+            prompt = PERCEPTION_PROMPT.format(
+                user_preferences=prefs_text,
+                query=query
+            )
             
             # Call LLM to extract structured information
             logger.debug("Calling LLM for perception...")

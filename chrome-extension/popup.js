@@ -127,6 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const submitBtn = document.getElementById('submit-btn');
   const resultDiv = document.getElementById('result');
   const loader = document.getElementById('loader');
+  const mathAbilitySelect = document.getElementById('math-ability');
 
   // Add some basic styles
   const style = document.createElement('style');
@@ -233,6 +234,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Send query to server
   async function sendQuery() {
     const query = queryInput.value.trim();
+    const mathAbility = mathAbilitySelect.value;
 
     if (!query) {
       resultDiv.textContent = 'Please enter a query';
@@ -249,7 +251,12 @@ document.addEventListener('DOMContentLoaded', function() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ query })
+        body: JSON.stringify({ 
+          query: query,
+          preferences: {
+            math_ability: mathAbility
+          }
+        })
       });
 
       let responseText = await response.text();

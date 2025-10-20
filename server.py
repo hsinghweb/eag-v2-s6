@@ -16,13 +16,15 @@ async def handle_query():
     try:
         data = request.get_json()
         query = data.get('query')
+        preferences = data.get('preferences', {})
         
         if not query:
             return jsonify({'error': 'No query provided'}), 400
         logger.info(f"Received query: {query}")
+        logger.info(f"User preferences: {preferences}")
         
-        # Run the AI agent with the query
-        result = await ai_main(query)
+        # Run the AI agent with the query and preferences
+        result = await ai_main(query, preferences=preferences)
         
         # Handle None result (agent failed or timed out)
         if result is None:
