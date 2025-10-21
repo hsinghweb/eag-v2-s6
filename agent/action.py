@@ -222,9 +222,41 @@ class ActionLayer:
             return None
         
         tool = self.tool_map[tool_name]
+        schema = tool.inputSchema
+        
+        # Extract actual parameters from nested schema
+        parameters = {}
+        
+        # Check if there's an 'input' property with a $ref
+        props = schema.get('properties', {})
+        if 'input' in props:
+            input_prop = props['input']
+            # Follow $ref to get actual parameters
+            if '$ref' in input_prop:
+                ref_path = input_prop['$ref']  # e.g., "#/$defs/TwoNumberInput"
+                if ref_path.startswith('#/$defs/'):
+                    def_name = ref_path.split('/')[-1]
+                    defs = schema.get('$defs', {})
+                    if def_name in defs:
+                        parameters = defs[def_name].get('properties', {})
+        
         return {
             "name": tool.name,
             "description": getattr(tool, 'description', 'No description'),
-            "parameters": tool.inputSchema.get('properties', {})
+            "parameters": parameters
         }
+    
+    def get_all_tools_info(self) -> List[Dict[str, Any]]:
+        """
+        Get information about all available tools.
+        
+        Returns:
+            List of dictionaries with tool information
+        """
+        tools_info = []
+        for tool_name in self.tool_map.keys():
+            info = self.get_tool_info(tool_name)
+            if info:
+                tools_info.append(info)
+        return tools_info
 

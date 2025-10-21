@@ -134,7 +134,7 @@ class CognitiveAgent:
         logger.info(f"[AGENT] Stored {len(self.preferences)} user preferences in memory")
     
     def _extract_value_from_result(self, result):
-        """Extract numeric/boolean value from various result formats."""
+        """Extract numeric/boolean value from various result formats - generic approach."""
         import json
         import re
         
@@ -146,10 +146,9 @@ class CognitiveAgent:
         
         try:
             parsed = json.loads(result)
-            for key in ['solution', 'result', 'value', 'answer']:
-                if key in parsed and parsed[key] is not None:
-                    return parsed[key]
+            return self._extract_value_from_json(parsed)
         except (json.JSONDecodeError, KeyError):
+            # Fallback: try to extract any number from the string
             num_match = re.search(r'-?\d+\.?\d*', result)
             if num_match:
                 return float(num_match.group())
@@ -168,7 +167,7 @@ class CognitiveAgent:
         """Build formatted email content with query and result."""
         initial_query = self.memory.memory_state.context.get("initial_query", "")
         lines = [
-            "Math AI Agent Result",
+            "AI Agent Result",
             "=" * 40,
             "",
         ]
@@ -178,7 +177,7 @@ class CognitiveAgent:
             f"Result: {result_str}",
             "",
             "=" * 40,
-            "Computed by Math AI Agent"
+            "Computed by AI Agent"
         ])
         return "\n".join(lines)
     
@@ -250,7 +249,7 @@ class CognitiveAgent:
         memory_query = MemoryQuery(query=query, max_results=5, min_relevance=0.3)
         memory_retrieval = self.memory.retrieve_relevant_facts(memory_query)
         
-        available_tools = self.action.get_available_tools()
+        available_tools = self.action.get_all_tools_info()
         
         self.state.iteration += 1
         logger.info("\n" + "-" * 80)
@@ -299,10 +298,11 @@ class CognitiveAgent:
         # The actual results will be extracted in _finalize_result
         return None
     
-    def _is_math_tool_result(self, i, ar):
-        """Check if action result at index i is a math tool result."""
-        NON_MATH_TOOLS = ['send_gmail', 'draw_rectangle', 'add_text_in_powerpoint']
-        
+    def _is_computation_result(self, i, ar):
+        """
+        Check if action result contains a computational result (vs status message).
+        Uses heuristics: looks for numeric results or structured data.
+        """
         if not (ar.success and ar.result is not None):
             return False
         
@@ -313,16 +313,28 @@ class CognitiveAgent:
             return False
         
         action_step = self.state.decision.action_plan[i]
-        return action_step.action_type == "tool_call" and action_step.tool_name not in NON_MATH_TOOLS
+        if action_step.action_type != "tool_call":
+            return False
+        
+        # Heuristic: check if result looks like a status message
+        result_str = str(ar.result).lower()
+        if any(word in result_str for word in ['sent', 'created', 'added', 'successfully', 'failed']):
+            return False
+        
+        # If it's a JSON with numeric values or it contains numbers, treat as computation
+        import json
+        import re
+        try:
+            parsed = json.loads(str(ar.result))
+            return isinstance(parsed, dict) and any(isinstance(v, (int, float, list)) for v in parsed.values())
+        except json.JSONDecodeError:
+            # Check if string contains numbers
+            return bool(re.search(r'\d', result_str))
+        
+        return True
     
-    def _extract_email_status(self, result_str):
-        """Extract email status from result string."""
-        if "successfully" in result_str.lower():
-            return "Email sent successfully"
-        return f"Email status: {result_str}"
-    
-    def _process_action_result(self, i, ar, math_results):
-        """Process a single action result and return email status if applicable."""
+    def _process_action_result(self, i, ar, computation_results):
+        """Process a single action result and return status message if applicable."""
         if not (ar.success and ar.result is not None and i < len(self.state.decision.action_plan)):
             return None
         
@@ -333,11 +345,13 @@ class CognitiveAgent:
         
         result_str = str(ar.result)
         
-        if action_step.tool_name == "send_gmail":
-            return self._extract_email_status(result_str)
+        # Check for status messages (email sent, file created, etc.)
+        if any(word in result_str.lower() for word in ['sent', 'created', 'added', 'successfully']):
+            return result_str
         
-        if self._is_math_tool_result(i, ar):
-            self._parse_tool_result(result_str, math_results)
+        # Otherwise treat as computation result
+        if self._is_computation_result(i, ar):
+            self._parse_tool_result(result_str, computation_results)
         
         return None
     
@@ -346,30 +360,71 @@ class CognitiveAgent:
         if not (self.state.decision and self.state.decision.action_plan):
             return None
         
-        math_results = []
-        email_status = None
+        computation_results = []
+        status_message = None
         
         for i, ar in enumerate(self.state.action_results):
-            status = self._process_action_result(i, ar, math_results)
+            status = self._process_action_result(i, ar, computation_results)
             if status:
-                email_status = status
+                status_message = status
         
         result_parts = []
-        if math_results:
-            result_parts.append(", ".join([str(v) for v in math_results]) if len(math_results) > 1 else str(math_results[0]))
-        if email_status:
-            result_parts.append(email_status)
+        if computation_results:
+            # For multi-step calculations, show only the final result (last value)
+            final_value = computation_results[-1] if computation_results else None
+            if final_value is not None:
+                result_parts.append(str(final_value))
+        if status_message:
+            result_parts.append(status_message)
         
         return " | ".join(result_parts) if result_parts else None
     
-    def _extract_value_from_json(self, parsed_json):
-        """Extract value from parsed JSON object."""
-        for key in ['solution', 'result', 'value', 'answer']:
+    def _format_value(self, value):
+        """Format a value for output."""
+        if isinstance(value, bool):
+            return "True" if value else "False"
+        if isinstance(value, (int, float)):
+            return float(value)
+        return None
+    
+    def _extract_from_common_keys(self, parsed_json):
+        """Extract value from common result keys."""
+        for key in ['result', 'value', 'answer', 'solution', 'salary', 'output']:
             if key in parsed_json and parsed_json[key] is not None:
-                value = parsed_json[key]
-                if isinstance(value, bool):
-                    return "True" if value else "False"
-                return float(value)
+                return self._format_value(parsed_json[key])
+        return None
+    
+    def _extract_from_lists(self, parsed_json):
+        """Extract last element from any list of numbers."""
+        for value in parsed_json.values():
+            if isinstance(value, list) and value and isinstance(value[-1], (int, float)):
+                return float(value[-1])
+        return None
+    
+    def _extract_any_numeric(self, parsed_json):
+        """Extract any numeric value from the dict."""
+        for value in parsed_json.values():
+            formatted = self._format_value(value)
+            if formatted is not None:
+                return formatted
+        return None
+    
+    def _extract_value_from_json(self, parsed_json):
+        """
+        Extract meaningful value from parsed JSON - generic approach.
+        Uses priority: common keys > lists > any numeric value.
+        """
+        if not isinstance(parsed_json, dict):
+            return None
+        
+        # Try extraction strategies in priority order
+        for strategy in [self._extract_from_common_keys, 
+                        self._extract_from_lists, 
+                        self._extract_any_numeric]:
+            result = strategy(parsed_json)
+            if result is not None:
+                return result
+        
         return None
     
     def _parse_tool_result(self, result_str, parsed_list):
@@ -471,19 +526,17 @@ class CognitiveAgent:
             )
             
             # Count breakdown
-            perception_calls = 1 if self.state.perception else 0
-            decision_calls = 1  # Always at least one decision call
-            tool_calls = len([ar for i, ar in enumerate(self.state.action_results) 
-                             if i < len(self.state.decision.action_plan) and 
-                             self.state.decision.action_plan[i].action_type == "tool_call"])
+            llm_calls = self.state.iteration - len([ar for i, ar in enumerate(self.state.action_results) 
+                                                    if i < len(self.state.decision.action_plan) and 
+                                                    self.state.decision.action_plan[i].action_type == "tool_call"])
+            tool_calls = self.state.iteration - llm_calls
             
             logger.info("=" * 80)
-            logger.info("[AGENT] Agent completed successfully")
+            logger.info("[AGENT] Processing completed successfully")
             logger.info(f"Total Iterations: {self.state.iteration}")
-            logger.info(f"  - Perception LLM calls: {perception_calls}")
-            logger.info(f"  - Decision LLM calls: {decision_calls}")
+            logger.info(f"  - LLM calls: {llm_calls}")
             logger.info(f"  - Tool calls: {tool_calls}")
-            logger.info(f"Result: {final_result}")
+            logger.info(f"Final Result: {final_result}")
             logger.info("=" * 80 + "\n")
             
             return response

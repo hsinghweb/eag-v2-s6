@@ -7,7 +7,7 @@ It decides what actions to take based on perception and memory.
 import logging
 import json
 import google.generativeai as genai
-from typing import List
+from typing import List, Dict
 from .models import (
     PerceptionOutput,
     MemoryRetrievalResult,
@@ -45,7 +45,7 @@ class DecisionLayer:
         self, 
         perception: PerceptionOutput,
         memory: MemoryRetrievalResult,
-        available_tools: List[str],
+        available_tools: List[Dict],
         previous_actions: List[ActionStep] = None
     ) -> DecisionOutput:
         """
@@ -54,7 +54,7 @@ class DecisionLayer:
         Args:
             perception: Output from the perception layer
             memory: Retrieved memory information
-            available_tools: List of available tool names
+            available_tools: List of tool schemas (name, description, parameters)
             previous_actions: Previous actions taken (for iteration)
             
         Returns:
@@ -81,7 +81,21 @@ class DecisionLayer:
                 "summary": memory.summary
             }
             
-            tools_list = ", ".join(available_tools)
+            # Format tool schemas for the prompt
+            tools_text = []
+            for tool in available_tools[:20]:  # Limit to first 20 tools to avoid token overflow
+                params_dict = tool.get('parameters', {})
+                if params_dict:
+                    # Format parameters with types
+                    params_list = []
+                    for param_name, param_info in params_dict.items():
+                        param_type = param_info.get('type', 'any')
+                        params_list.append(f"{param_name}: {param_type}")
+                    params_str = ", ".join(params_list)
+                else:
+                    params_str = ""
+                tools_text.append(f"- {tool['name']}({params_str}): {tool.get('description', '')}")
+            tools_list = "\n".join(tools_text) if tools_text else "No tools available"
             
             # Format user preferences for prompt
             if self.user_preferences:
