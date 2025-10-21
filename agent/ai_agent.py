@@ -195,6 +195,23 @@ class CognitiveAgent:
         ])
         return "\n".join(lines)
     
+    def _build_email_result_string(self, extracted):
+        """Build result string for email content from computation results."""
+        computation_results = []
+        for i, ar in enumerate(self.state.action_results):
+            if self._is_computation_result(i, ar):
+                self._parse_tool_result(str(ar.result), computation_results)
+        
+        # Format based on whether operations are chained
+        if len(computation_results) > 1 and self._has_chained_operations(computation_results):
+            return self._format_result_as_string(computation_results[-1])
+        elif len(computation_results) > 1:
+            return ", ".join(str(v) for v in computation_results)
+        elif computation_results:
+            return self._format_result_as_string(computation_results[0])
+        else:
+            return self._format_result_as_string(extracted)
+    
     def _replace_placeholder(self, value, param_name, results_map):
         """Replace a single placeholder value."""
         import re
@@ -219,24 +236,7 @@ class CognitiveAgent:
         needs_string = param_name and param_name.lower() in ['content', 'text', 'message', 'body', 'description']
         
         if needs_string:
-            # For email content, collect all computation results so far
-            computation_results = []
-            for i, ar in enumerate(self.state.action_results):
-                if self._is_computation_result(i, ar):
-                    self._parse_tool_result(str(ar.result), computation_results)
-            
-            # Format computation results based on whether operations are chained
-            if len(computation_results) > 1 and self._has_chained_operations(computation_results):
-                # Chained operations: show only final result
-                result_str = self._format_result_as_string(computation_results[-1])
-            elif len(computation_results) > 1:
-                # Independent results: show all
-                result_str = ", ".join(str(v) for v in computation_results)
-            elif computation_results:
-                result_str = self._format_result_as_string(computation_results[0])
-            else:
-                result_str = self._format_result_as_string(extracted)
-            
+            result_str = self._build_email_result_string(extracted)
             return self._build_email_content(result_str)
         
         return extracted
