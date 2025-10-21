@@ -368,16 +368,18 @@ class CognitiveAgent:
             if status:
                 status_message = status
         
-        result_parts = []
+        # Return only the computed result for display (no status messages)
         if computation_results:
             # For multi-step calculations, show only the final result (last value)
             final_value = computation_results[-1] if computation_results else None
             if final_value is not None:
-                result_parts.append(str(final_value))
-        if status_message:
-            result_parts.append(status_message)
+                return str(final_value)
         
-        return " | ".join(result_parts) if result_parts else None
+        # If no computation result but there's a status message, return it
+        if status_message:
+            return status_message
+        
+        return None
     
     def _format_value(self, value):
         """Format a value for output."""
