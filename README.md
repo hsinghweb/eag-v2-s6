@@ -273,13 +273,22 @@ Create a `.env` file in the project root:
 # Gemini API Key
 GEMINI_API_KEY=your_gemini_api_key_here
 
+# Logging Configuration (Options: DEBUG, INFO, WARNING, ERROR, CRITICAL)
+LOG_LEVEL=INFO
+
 # Gmail Settings (for email features)
 GMAIL_ADDRESS=your_email@gmail.com
-   GMAIL_APP_PASSWORD=your_gmail_app_password
-   RECIPIENT_EMAIL=recipient@example.com
-   ```
+GMAIL_APP_PASSWORD=your_gmail_app_password
+RECIPIENT_EMAIL=recipient@example.com
+```
 
 **Note**: For Gmail, you need to generate an [App Password](https://support.google.com/accounts/answer/185833).
+
+**Logging Levels**:
+- `DEBUG`: Detailed logging including full prompts sent to LLM (useful for debugging)
+- `INFO`: Standard logging with major operations (recommended for normal use)
+- `WARNING`: Only warnings and errors
+- `ERROR`: Only error messages
 
 ### 3. Running the Agent
 
@@ -567,10 +576,32 @@ Expected: 78.54 | Email sent successfully (4 iterations)
 - Result chaining
 - Error traces
 
-**Log Levels**:
-- `INFO`: Major operations
-- `DEBUG`: Detailed step-by-step execution
-- `ERROR`: Failures and exceptions
+**Log Levels** (configurable via `.env` file):
+- `INFO`: Major operations (default, recommended for production)
+- `DEBUG`: Detailed step-by-step execution with full LLM prompts
+- `WARNING`: Only warnings and errors
+- `ERROR`: Failures and exceptions only
+- `CRITICAL`: Critical failures only
+
+**Changing Log Level**:
+1. Edit your `.env` file
+2. Set `LOG_LEVEL=DEBUG` to see full prompts sent to the LLM
+3. Set `LOG_LEVEL=INFO` for normal operation
+4. Restart the agent/server for changes to take effect
+
+**Example Debug Output**:
+When `LOG_LEVEL=DEBUG`, you'll see the complete prompts:
+```
+================================================================================
+PERCEPTION_PROMPT (Final prompt being sent to LLM):
+================================================================================
+You are the Perception Layer of a Math AI Agent...
+**User Preferences:** 
+- math_ability: algebra
+
+**User Query:** Solve x + 4 = 9
+================================================================================
+```
 
 ---
 

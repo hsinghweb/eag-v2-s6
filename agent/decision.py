@@ -119,6 +119,13 @@ class DecisionLayer:
                 prompt += "\n\nPrevious actions completed:\n" + "\n".join(actions_summary)
                 prompt += "\n\nContinue from where you left off."
             
+            # DEBUG: Print the final prompt being sent to LLM
+            logger.debug("=" * 80)
+            logger.debug("DECISION_PROMPT (Final prompt being sent to LLM):")
+            logger.debug("=" * 80)
+            logger.debug(prompt)
+            logger.debug("=" * 80)
+            
             # Call LLM to create action plan
             logger.debug("Calling LLM for decision-making...")
             response = self.model.generate_content(prompt)

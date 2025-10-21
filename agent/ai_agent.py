@@ -31,13 +31,27 @@ from .models import (
     MemoryQuery
 )
 
+# Load environment variables first
+load_dotenv()
+
 # Configure logging
 log_dir = "logs"
 os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, f"cognitive_agent_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
 
+# Get log level from environment variable, default to INFO
+log_level_str = os.getenv("LOG_LEVEL", "INFO").upper()
+log_level_map = {
+    "DEBUG": logging.DEBUG,
+    "INFO": logging.INFO,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL
+}
+log_level = log_level_map.get(log_level_str, logging.INFO)
+
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=log_level,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
         logging.FileHandler(log_file, encoding='utf-8'),
@@ -51,8 +65,8 @@ for handler in logging.getLogger().handlers:
         handler.setStream(open(handler.stream.fileno(), mode='w', encoding='utf-8', buffering=1, closefd=False))
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
+# Log the configured log level
+logger.info(f"Logging configured with level: {logging.getLevelName(log_level)}")
 
 # Configure Gemini API
 api_key = os.getenv("GEMINI_API_KEY")
