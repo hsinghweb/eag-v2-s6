@@ -76,10 +76,12 @@ Output JSON with this structure:
             "description": "what this step does",
             "tool_name": "tool name or null",
             "parameters": {{"input": {{...}}}},
-            "reasoning": "why this step is needed"
+            "reasoning": "why this step is needed",
+            "reasoning_type": "arithmetic|logical|algebraic|geometric|statistical|data_retrieval|conditional|multi_step"
         }}
     ],
     "reasoning": "overall plan reasoning",
+    "reasoning_type": "arithmetic|logical|algebraic|geometric|statistical|data_retrieval|conditional|multi_step",
     "expected_outcome": "what should happen",
     "confidence": 0.0-1.0,
     "should_continue": false,
@@ -108,6 +110,18 @@ Output JSON with this structure:
 1. ALL tool parameters MUST be wrapped in "input" object: {{"input": {{"param": value}}}}
 2. Use "RESULT_FROM_STEP_N" for result chaining in multi-step workflows
 3. Set should_continue=false when ready to give final answer
+
+**Reasoning Type Classification:**
+- Tag EACH action step with its reasoning type:
+  * "arithmetic" - Basic calculations (add, subtract, multiply, divide)
+  * "logical" - Boolean logic, conditionals, true/false reasoning
+  * "algebraic" - Equation solving, variable manipulation
+  * "geometric" - Shapes, areas, volumes, spatial reasoning
+  * "statistical" - Mean, median, probability, data analysis
+  * "data_retrieval" - Looking up information from memory/database
+  * "conditional" - If-then decision making
+  * "multi_step" - Complex workflows combining multiple reasoning types
+- Tag the overall plan's reasoning_type based on the primary reasoning approach
 
 **Self-Check Instructions:**
 - ALWAYS verify: Are all required tools available? Are parameters complete? Is the plan logically sound?

@@ -215,6 +215,7 @@ class ActionStep(BaseModel):
     tool_name: Optional[str] = Field(default=None, description="Tool to call if action_type is tool_call")
     parameters: Dict[str, Any] = Field(default_factory=dict, description="Parameters for the action")
     reasoning: str = Field(default="", description="Reasoning behind this step")
+    reasoning_type: str = Field(default="", description="Type of reasoning (arithmetic, logical, algebraic, etc.)")
 
 
 class FallbackStep(BaseModel):
@@ -243,6 +244,7 @@ class DecisionOutput(BaseModel):
     """Output from the Decision-Making Layer"""
     action_plan: List[ActionStep] = Field(..., description="Sequence of actions to take")
     reasoning: str = Field(..., description="Overall reasoning for the decision")
+    reasoning_type: str = Field(default="", description="Primary type of reasoning used (arithmetic, logical, algebraic, etc.)")
     expected_outcome: str = Field(default="", description="Expected outcome of the plan")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Confidence in the decision")
     should_continue: bool = Field(default=True, description="Whether to continue with more iterations")
