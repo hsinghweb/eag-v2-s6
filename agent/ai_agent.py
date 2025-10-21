@@ -321,15 +321,15 @@ class CognitiveAgent:
         if any(word in result_str for word in ['sent', 'created', 'added', 'successfully', 'failed']):
             return False
         
-        # If it's a JSON with numeric values or it contains numbers, treat as computation
+        # If it's a JSON with computational values (numbers, booleans, lists), treat as computation
         import json
         import re
         try:
             parsed = json.loads(str(ar.result))
-            return isinstance(parsed, dict) and any(isinstance(v, (int, float, list)) for v in parsed.values())
+            return isinstance(parsed, dict) and any(isinstance(v, (int, float, bool, list)) for v in parsed.values())
         except json.JSONDecodeError:
-            # Check if string contains numbers
-            return bool(re.search(r'\d', result_str))
+            # Check if string contains numbers or boolean keywords
+            return bool(re.search(r'\d', result_str)) or result_str in ['true', 'false']
         
         return True
     

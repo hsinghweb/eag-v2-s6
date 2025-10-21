@@ -83,7 +83,7 @@ class DecisionLayer:
             
             # Format tool schemas for the prompt
             tools_text = []
-            for tool in available_tools[:20]:  # Limit to first 20 tools to avoid token overflow
+            for tool in available_tools[:50]:  # Limit to first 50 tools to avoid token overflow
                 params_dict = tool.get('parameters', {})
                 if params_dict:
                     # Format parameters with types
