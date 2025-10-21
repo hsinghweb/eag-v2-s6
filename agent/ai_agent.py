@@ -488,6 +488,20 @@ class CognitiveAgent:
         if self.state.iteration >= MAX_ITERATIONS:
             return None, True  # result, should_stop
         
+        # Check for out-of-scope queries (fallback mechanism)
+        if perception.intent == "out_of_scope" or (
+            perception.fallback and 
+            perception.fallback.is_uncertain and 
+            perception.fallback.suggested_clarification
+        ):
+            logger.info("[AGENT] Query is out of scope - triggering fallback mechanism")
+            fallback_message = (
+                perception.fallback.suggested_clarification if perception.fallback 
+                else "I apologize, but this query is outside my mathematical capabilities. I can help with arithmetic, algebra, geometry, statistics, and logical reasoning."
+            )
+            logger.info(f"[AGENT] Fallback message: {fallback_message}")
+            return fallback_message, True  # Return fallback message and stop
+        
         decision = self._execute_decision_layer(perception, query)
         
         if self.state.iteration >= MAX_ITERATIONS:
