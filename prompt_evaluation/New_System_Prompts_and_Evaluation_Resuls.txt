@@ -11,7 +11,7 @@
   "internal_self_checks": true,
   "reasoning_type_awareness": true,
   "fallbacks": true,
-  "overall_clarity": "Outstandingly robust and introspective structure — includes self-checks, fallback reasoning, and uncertainty handling. Excellent for promoting reliability and iterative clarification in LLM reasoning."
+  "overall_clarity": "Excellent structure with clear reasoning boundaries, well-defined JSON schema, explicit in-scope and out-of-scope rules, and built-in fallback and self-check mechanisms. Highly robust for consistent multi-turn reasoning and safe mathematical intent extraction."
 }
 
 # ============================================================================
@@ -21,24 +21,12 @@
 {
   "explicit_reasoning": true,
   "structured_output": true,
-  "multi_step_support": true,
-  "tool_integration": true,
-  "self_verification": true,
-  "fallback_handling": true,
-  "parameter_standardization": true,
-  "result_chaining": true,
-  "planning_depth": "High — supports sequential tool calls, reasoning, and validation",
-  "strengths": [
-    "Highly modular and extensible structure",
-    "Consistent parameter formatting across tools",
-    "Strong reasoning traceability via step-level and global reasoning",
-    "Built-in fallback and self-check mechanisms for reliability"
-  ],
-  "weaknesses": [
-    "No explicit handling for asynchronous or conditional branching",
-    "Memory querying limited (marked not yet implemented)",
-    "Does not define error propagation between steps beyond fallback"
-  ],
-  "confidence": 0.98,
-  "overall_clarity": "Exceptionally clear, logically coherent, and complete — ideal for autonomous decision planning within an AI agent framework."
+  "tool_separation": true,
+  "conversation_loop": true,
+  "instructional_framing": true,
+  "internal_self_checks": false,
+  "reasoning_type_awareness": true,
+  "fallbacks": false,
+  "overall_clarity": "Very strong prompt with clear JSON schema, reasoning fields, and multi-step structure. It supports chaining and modular decision-making well, but could improve with explicit self-checks and error-handling for uncertain or failed tool steps."
 }
+
