@@ -160,7 +160,7 @@ class FallbackPerception(BaseModel):
     """Fallback information from Perception Layer"""
     is_uncertain: bool = Field(..., description="Whether the perception is uncertain")
     uncertain_aspects: List[str] = Field(default_factory=list, description="Aspects that are uncertain")
-    suggested_clarification: str = Field(default="", description="Suggested clarification question for user")
+    suggested_clarification: Optional[str] = Field(default="", description="Suggested clarification question for user")
 
 
 class PerceptionOutput(BaseModel):
